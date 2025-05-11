@@ -52,6 +52,16 @@ const config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        'brand-background': 'hsl(var(--background))',
+        'brand-primary': 'hsl(var(--primary))',
+        'brand-primary-foreground': 'hsl(var(--primary-foreground))',
+        'brand-card': 'hsl(var(--card))',
+        'brand-text-primary': 'hsl(var(--foreground))',
+        'brand-text-secondary': 'hsl(var(--muted-foreground))',
+        'brand-accent': 'hsl(250 60% 60%)',
+        'brand-accent-foreground': 'hsl(0 0% 100%)',
+        'brand-dark-button': 'hsl(220 15% 25%)',
+        'brand-dark-button-foreground': 'hsl(0 0% 100%)',
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -60,17 +70,28 @@ const config = {
       },
       keyframes: {
         "accordion-down": {
-          from: { height: 0 },
+          from: { height: "0" },
           to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
           from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: 0 },
+          to: { height: "0" },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+      },
+      letterSpacing: {
+        tighter: '-0.05em',
+        tight: '-0.025em',
+        normal: '0em',
+        wide: '0.025em',
+        wider: '0.05em',
+        widest: '0.1em',
+      },
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
       },
     },
   },

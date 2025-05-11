@@ -7,7 +7,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold">Login</h1>
-          <p className="text-muted-foreground mt-2">Sign in to your account to continue</p>
+          <p className="text-muted-foreground mt-2 tracking-tight">Sign in to your account to continue</p>
         </div>
         <div className="bg-card rounded-lg shadow-lg p-6">
           <LoginForm />

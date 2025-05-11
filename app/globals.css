@@ -4,48 +4,85 @@
 
 @layer base {
   :root {
+    /* Light theme */
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 240 10% 3.9%;
+    
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 240 10% 3.9%;
+    
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --popover-foreground: 240 10% 3.9%;
+    
+    /* Using Malachite for primary */
+    --primary: 142 70% 45%;
+    --primary-foreground: 355 100% 100%;
+    
+    /* Electric Violet for secondary */
+    --secondary: 265 89% 78%;
+    --secondary-foreground: 240 5.9% 10%;
+    
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    
     --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
+    
+    /* Crimson for destructive */
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
-  }
+    --destructive-foreground: 0 0% 98%;
 
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 142 70% 45%;
+
+    --radius: 0.75rem;
+  }
+ 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    /* Using soft dark background instead of pure black */
+    --background: 224 71% 4%;
+    --foreground: 0 0% 95%;
+    
+    /* Using darker blue-gray for card */
+    --card: 222 47% 11%;
+    --card-foreground: 0 0% 95%;
+    
+    /* Using deep blue-gray for popover */
+    --popover: 223 47% 11%;
+    --popover-foreground: 0 0% 95%;
+    
+    /* Using Malachite Light with adjusted saturation */
+    --primary: 142 84% 65%;
+    --primary-foreground: 224 71% 4%;
+    
+    /* Using Electric Violet Light with adjusted brightness */
+    --secondary: 265 100% 66%;
+    --secondary-foreground: 0 0% 95%;
+    
+    /* Using soft dark variants for muted */
+    --muted: 223 47% 11%;
+    --muted-foreground: 224 64% 94%;
+    
+    /* Using Electric Violet with adjusted saturation */
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    
+    /* Using Crimson Dark with adjusted tone */
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 95%;
+
+    /* Using soft dark variants for borders and inputs */
+    --border: 216 34% 17%;
+    --input: 216 34% 17%;
+    --ring: 265 89% 78%;
+
+    /* Chart colors using the style guide with adjusted saturation */
+    --chart-1: 142 84% 65%; /* Malachite */
+    --chart-2: 265 89% 78%; /* Electric Violet */
+    --chart-3: 0 84% 60%;   /* Crimson */
+    --chart-4: 265 100% 66%; /* Electric Violet Light */
+    --chart-5: 142 70% 45%; /* Malachite Dark */
   }
 }
 
@@ -55,5 +92,29 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "ss01", "ss02", "cv01", "cv02", "cv03";
   }
 }
+
+/* Custom styles for modern UI elements */
+.glass-effect {
+  backdrop-filter: blur(12px);
+  background: rgba(17, 25, 40, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.125);
+}
+
+.gradient-border {
+  background: linear-gradient(var(--background), var(--background)) padding-box,
+              linear-gradient(to right, hsl(265, 89%, 78%), hsl(142, 84%, 65%)) border-box;
+  border: 1px solid transparent;
+}
+
+.hover-glow:hover {
+  box-shadow: 0 0 20px rgba(162, 84, 255, 0.15);
+  transition: all 0.3s ease;
+}
+
+.inter {
+  letter-spacing: -0.02em;
+}
+

@@ -1,3 +1,5 @@
+"use server"
+
 import { hash, compare } from "bcryptjs"
 import { executeQuery } from "./db"
 import { cookies } from "next/headers"
@@ -42,6 +44,7 @@ export async function authenticateUser(username: string, password: string) {
     `
 
     const result = await executeQuery(query, [username])
+    console.log("Query result:", JSON.stringify(result, null, 2))
 
     // Check if we got any results
     if (!result || result.length === 0) {
@@ -50,9 +53,11 @@ export async function authenticateUser(username: string, password: string) {
     }
 
     const user = result[0]
+    console.log("Found user:", { ...user, password: '[REDACTED]' })
 
     // Verify the password
     const passwordMatch = await comparePasswords(password, user.password)
+    console.log("Password match result:", passwordMatch)
 
     if (!passwordMatch) {
       console.log("Password doesn't match for user:", username)
@@ -61,6 +66,7 @@ export async function authenticateUser(username: string, password: string) {
 
     // Remove password from user object
     const { password: _, ...userWithoutPassword } = user
+    console.log("Authentication successful for user:", username)
 
     return userWithoutPassword
   } catch (error) {
