@@ -31,7 +31,8 @@ async function getPortfolioDetails(portfolioId: number, accountId: number) {
       COALESCE(lp.total_value, 0) as total_value,
       COALESCE(lp.return_percentage, 0) as return_percentage,
       COALESCE(lp.benchmark_comparison, 0) as benchmark_comparison,
-      COALESCE(lp.last_updated, p.created_at) as last_updated
+      COALESCE(lp.last_updated, p.created_at) as last_updated,
+      p.cash_balance
     FROM portfolios p
     LEFT JOIN latest_performance lp ON p.id = lp.portfolio_id
     WHERE p.id = $1 AND p.account_id = $2
@@ -100,6 +101,24 @@ export default async function PortfolioPage({ params }: { params: { id: string }
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Asset Value</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formatCurrency(portfolio.total_value - portfolio.cash_balance)}</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Cash Balance</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formatCurrency(portfolio.cash_balance)}</div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Value</CardTitle>

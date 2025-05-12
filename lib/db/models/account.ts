@@ -150,4 +150,23 @@ export async function createAccount(data: z.infer<typeof accountSchema>) {
     console.error('Database Error:', error);
     throw new Error('Failed to create account.');
   }
+}
+
+// Delete an account
+export async function deleteAccount(id: number) {
+  noStore(); // Ensure we get fresh data state if needed, although deletion doesn't return data
+  try {
+    // Ensure related data (e.g., portfolios, transactions) is handled appropriately.
+    // The current schema uses ON DELETE CASCADE for portfolios, 
+    // which means related portfolios (and their assets, transactions, etc.) will be deleted.
+    // Consider if this is the desired behavior or if accounts should be soft-deleted.
+    await sql`
+      DELETE FROM accounts
+      WHERE id = ${id}
+    `;
+  } catch (error) {
+    console.error('Database Error:', error);
+    // Add more specific error handling if needed (e.g., check for foreign key constraints if CASCADE wasn't used)
+    throw new Error('Failed to delete account.');
+  }
 } 

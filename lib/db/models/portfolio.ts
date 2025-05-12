@@ -8,16 +8,17 @@ export interface Portfolio {
   return_percentage: number;
   asset_count: number;
   last_updated: string;
+  cash_balance: number;
 }
 
 export async function getPortfolios(accountId: number): Promise<Portfolio[]> {
   try {
-    // Query to get portfolios with their total value, return, and asset count
+    // Query to get portfolios with their total value (including cash), return, and asset count
     const query = `
       WITH latest_performance AS (
         SELECT 
           portfolio_id,
-          value as total_value,
+          value as asset_value,
           return_percentage,
           date as last_updated
         FROM performances
@@ -40,7 +41,8 @@ export async function getPortfolios(accountId: number): Promise<Portfolio[]> {
         p.id,
         p.name,
         p.description,
-        COALESCE(lp.total_value, 0) as total_value,
+        p.cash_balance,
+        COALESCE(lp.asset_value, 0) + p.cash_balance as total_value,
         COALESCE(lp.return_percentage, 0) as return_percentage,
         COALESCE(ac.asset_count, 0) as asset_count,
         COALESCE(lp.last_updated, p.created_at) as last_updated
@@ -52,7 +54,13 @@ export async function getPortfolios(accountId: number): Promise<Portfolio[]> {
     `
 
     const result = await executeQuery(query, [accountId])
-    return (result || []) as Portfolio[]
+    return (result || []).map(row => ({
+      ...row,
+      total_value: parseFloat(row.total_value),
+      return_percentage: parseFloat(row.return_percentage),
+      asset_count: parseInt(row.asset_count),
+      cash_balance: parseFloat(row.cash_balance)
+    })) as Portfolio[]
 
   } catch (error) {
     console.error('Error fetching portfolios:', error)

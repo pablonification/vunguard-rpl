@@ -6,6 +6,7 @@ import { Plus } from "lucide-react"
 import Link from "next/link"
 import { getAccounts } from "@/lib/db/models/account"
 import { formatDate } from "@/lib/utils"
+import { DeleteAccountButton } from "./delete-account-button"
 
 export default async function AccountsPage() {
   const accounts = await getAccounts()
@@ -60,6 +61,7 @@ export default async function AccountsPage() {
                           Edit
                         </Button>
                       </Link>
+                      <DeleteAccountButton accountId={account.id} accountName={account.username} />
                     </TableCell>
                   </TableRow>
                 ))}

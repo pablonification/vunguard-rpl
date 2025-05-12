@@ -28,6 +28,7 @@ export async function DashboardLayout({ children, requiredRoles }: DashboardLayo
   return (
     <DashboardLayoutClient 
       session={{
+        id: session.id as number,
         username: session.username as string,
         role: session.role as string,
         avatarUrl: session.avatarUrl as string | undefined

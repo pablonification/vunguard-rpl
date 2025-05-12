@@ -37,12 +37,12 @@ export interface TopPerformingProduct {
 
 export async function getDashboardSummary(accountId: number): Promise<DashboardSummary> {
   try {
-    // Get total portfolio value and return
+    // Get total portfolio value (assets + cash) and return
     const valueSummaryQuery = `
       WITH latest_performance AS (
         SELECT 
           p.portfolio_id,
-          p.value,
+          p.value AS asset_value, -- Renamed to avoid clash
           p.return_percentage
         FROM performances p
         INNER JOIN portfolios pf ON p.portfolio_id = pf.id
@@ -58,7 +58,7 @@ export async function getDashboardSummary(accountId: number): Promise<DashboardS
       month_ago_performance AS (
         SELECT 
           p.portfolio_id,
-          p.value
+          p.value AS asset_value -- Renamed to avoid clash
         FROM performances p
         INNER JOIN portfolios pf ON p.portfolio_id = pf.id
         WHERE p.asset_id IS NULL 
@@ -70,17 +70,40 @@ export async function getDashboardSummary(accountId: number): Promise<DashboardS
           AND p2.asset_id IS NULL
           AND p2.date <= NOW() - INTERVAL '1 month'
         )
+      ),
+      -- Calculate total cash balance for the account
+      total_cash AS (
+        SELECT COALESCE(SUM(cash_balance), 0) AS total_cash_balance
+        FROM portfolios
+        WHERE account_id = $1
+      ),
+      -- Aggregate latest asset values
+      latest_assets AS (
+          SELECT COALESCE(SUM(asset_value), 0) AS total_asset_value, COALESCE(AVG(return_percentage), 0) as avg_return
+          FROM latest_performance
+      ),
+      -- Aggregate month-ago asset values
+      month_ago_assets AS (
+          SELECT COALESCE(SUM(asset_value), 0) AS total_month_ago_asset_value
+          FROM month_ago_performance
       )
+      -- Combine asset values and cash balance
       SELECT 
-        COALESCE(SUM(lp.value), 0) as total_value,
-        COALESCE(AVG(lp.return_percentage), 0) as avg_return,
-        COALESCE(SUM(lp.value) - SUM(mp.value), 0) as value_change,
+        la.total_asset_value + tc.total_cash_balance as total_value, -- Sum of assets + cash
+        la.avg_return, -- Note: avg_return might need reconsideration if it should include cash impact
+        -- Calculate monthly change based on combined value (assets + cash)
+        -- Assuming cash balance a month ago is needed for accurate % change. 
+        -- For simplicity, let's base the change only on asset value change for now.
+        -- A more accurate calculation would require historical cash balance.
+        la.total_asset_value - maa.total_month_ago_asset_value as value_change,
         CASE 
-          WHEN SUM(mp.value) = 0 THEN 0
-          ELSE ((SUM(lp.value) - SUM(mp.value)) / SUM(mp.value) * 100)
+          WHEN maa.total_month_ago_asset_value = 0 THEN 0
+          ELSE ((la.total_asset_value - maa.total_month_ago_asset_value) / maa.total_month_ago_asset_value * 100)
         END as month_change_percent
-      FROM latest_performance lp
-      LEFT JOIN month_ago_performance mp ON lp.portfolio_id = mp.portfolio_id
+      FROM 
+        latest_assets la,
+        total_cash tc,
+        month_ago_assets maa
     `;
 
     // Get count of active products

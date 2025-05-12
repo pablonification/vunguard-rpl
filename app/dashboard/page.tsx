@@ -11,13 +11,17 @@ import {
   getTopPerformingProducts 
 } from "@/lib/db/models/dashboard"
 import DashboardCharts from "./dashboard-charts"
+import { TopUpDialog } from "./topup-dialog"
+import { Button } from "@/components/ui/button"
+import { Coins } from "lucide-react"
 
 export default async function DashboardPage() {
   // Get current user
   const session = await requireAuth()
-  const accountQuery = "SELECT id FROM accounts WHERE id = $1"
+  const accountQuery = "SELECT id, full_name FROM accounts WHERE id = $1"
   const accountResult = await executeQuery(accountQuery, [session.id])
   const accountId = accountResult[0]?.id
+  const accountFullName = accountResult[0]?.full_name
 
   if (!accountId) {
     throw new Error('Account not found')
@@ -35,9 +39,14 @@ export default async function DashboardPage() {
   return (
     <DashboardLayout>
       <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          {session.role === 'investor' && (
+            <TopUpDialog accountId={accountId} />
+          )}
+        </div>
         <p className="text-muted-foreground">
-          Welcome back, {(session as any).username}! Here's an overview of your investment assets.
+          Welcome back, {accountFullName || session.username}! Here's an overview of your investment assets.
         </p>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

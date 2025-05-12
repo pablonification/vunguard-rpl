@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { logout } from "@/lib/auth"; // Import logout
 import { ThemeToggle } from "@/components/theme-toggle";
+import NotificationBell from "@/app/components/NotificationBell";
 
 // This is the DashboardLayoutClient component moved from dashboard-layout.tsx
 export function DashboardLayoutClient({ 
@@ -40,7 +41,12 @@ export function DashboardLayoutClient({
 }: { 
   children: ReactNode, 
   requiredRoles?: string[], 
-  session: { username: string, role: string, avatarUrl?: string } // Added more specific type for session
+  session: { 
+    id: number,
+    username: string, 
+    role: string, 
+    avatarUrl?: string 
+  }
 }) {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const router = useRouter(); // Initialize useRouter
@@ -176,13 +182,7 @@ export function DashboardLayoutClient({
                 <Mail className="h-6 w-6" aria-hidden="true" />
               </button>
 
-              <button
-                type="button"
-                className="rounded-full bg-background/50 p-1 text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                aria-label="View notifications"
-              >
-                <Bell className="h-6 w-6" aria-hidden="true" />
-              </button>
+              <NotificationBell userId={session.id} />
 
               <ThemeToggle />
               

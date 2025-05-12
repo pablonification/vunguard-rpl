@@ -6,7 +6,7 @@ import { usePathname, redirect } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { 
   LayoutGrid, Briefcase, FolderKanban, BarChart2, TrendingUp, UserCircle2,
-  Headphones, LogOut as IconLogOut, PanelLeftClose, PanelRightClose
+  Headphones, LogOut as IconLogOut, PanelLeftClose, PanelRightClose, LineChart, ClipboardCheck
 } from "lucide-react"
 import { logout } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
@@ -51,6 +51,18 @@ const navItems: NavItem[] = [
     href: "/dashboard/performance",
     icon: <TrendingUp className="h-6 w-6" />,
     roles: ["investor", "manager", "analyst", "admin"],
+  },
+  {
+    title: "Recommendations",
+    href: "/dashboard/analyst/recommendations",
+    icon: <LineChart className="h-6 w-6" />,
+    roles: ["analyst"],
+  },
+  {
+    title: "Review Recommendations",
+    href: "/dashboard/manager/recommendations",
+    icon: <ClipboardCheck className="h-6 w-6" />,
+    roles: ["manager"],
   },
   {
     title: "Accounts",

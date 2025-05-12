@@ -19,12 +19,14 @@ import { createTransaction, transactionSchema } from "@/lib/db/models/transactio
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import type { z } from "zod"
+import type { CreateTransactionInput } from "@/lib/db/models/transaction"
 
-type FormData = z.infer<typeof transactionSchema>
+type FormData = z.infer<typeof transactionSchema>;
 
 interface Portfolio {
   id: number;
   name: string;
+  cashBalance: number;
   assets: Array<{
     id: number;
     productId: number;
@@ -33,13 +35,23 @@ interface Portfolio {
   }>;
 }
 
+interface Investor {
+  id: number;
+  full_name: string;
+  email: string;
+}
+
 export function RecordTransactionForm() {
   const router = useRouter()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
-  const [isLoadingPortfolios, setIsLoadingPortfolios] = useState(true)
+  const [isLoadingInvestors, setIsLoadingInvestors] = useState(true)
+  const [isLoadingPortfolios, setIsLoadingPortfolios] = useState(false)
+  const [investors, setInvestors] = useState<Investor[]>([])
   const [portfolios, setPortfolios] = useState<Portfolio[]>([])
+  const [selectedInvestor, setSelectedInvestor] = useState<Investor | null>(null)
   const [selectedPortfolio, setSelectedPortfolio] = useState<Portfolio | null>(null)
+  const [selectedAsset, setSelectedAsset] = useState<Portfolio['assets'][0] | null>(null)
 
   const {
     register,
@@ -51,7 +63,6 @@ export function RecordTransactionForm() {
     resolver: zodResolver(transactionSchema),
     defaultValues: {
       transactionType: "buy",
-      transactionDate: new Date().toISOString().split('T')[0],
     }
   })
 
@@ -59,16 +70,46 @@ export function RecordTransactionForm() {
   const price = watch("price")
   const quantity = watch("quantity")
 
+  // Load investors on component mount
+  useEffect(() => {
+    async function loadInvestors() {
+      try {
+        setIsLoadingInvestors(true)
+        const response = await fetch('/api/investors')
+        if (!response.ok) {
+          throw new Error('Failed to fetch investors')
+        }
+        const data = await response.json()
+        setInvestors(data)
+      } catch (error) {
+        console.error('Failed to load investors:', error)
+        toast({
+          title: "Error",
+          description: "Failed to load investors. Please try refreshing the page.",
+          variant: "destructive",
+        })
+      } finally {
+        setIsLoadingInvestors(false)
+      }
+    }
+    loadInvestors()
+  }, [toast])
+
+  // Load portfolios when investor is selected
   useEffect(() => {
     async function loadPortfolios() {
+      if (!selectedInvestor) {
+        setPortfolios([])
+        return
+      }
+
       try {
         setIsLoadingPortfolios(true)
-        const response = await fetch('/api/portfolios')
+        const response = await fetch(`/api/portfolios?userId=${selectedInvestor.id}`)
         if (!response.ok) {
           throw new Error('Failed to fetch portfolios')
         }
         const data = await response.json()
-        console.log('Loaded portfolios:', data)
         setPortfolios(data)
       } catch (error) {
         console.error('Failed to load portfolios:', error)
@@ -82,7 +123,7 @@ export function RecordTransactionForm() {
       }
     }
     loadPortfolios()
-  }, [toast])
+  }, [selectedInvestor, toast])
 
   // Calculate total for display only
   const calculateTotal = () => {
@@ -92,28 +133,66 @@ export function RecordTransactionForm() {
     return 0
   }
 
+  const handleInvestorChange = (investorId: string) => {
+    const investor = investors.find(i => i.id === parseInt(investorId))
+    setSelectedInvestor(investor || null)
+    setSelectedPortfolio(null)
+    setSelectedAsset(null)
+  }
+
   const handlePortfolioChange = (portfolioId: string) => {
     const portfolio = portfolios.find(p => p.id === parseInt(portfolioId))
     setSelectedPortfolio(portfolio || null)
+    setSelectedAsset(null)
     setValue("portfolioId", parseInt(portfolioId))
-    // Reset asset selection when portfolio changes
-    setValue("assetId", undefined)
+  }
+
+  const handleAssetChange = (assetId: string) => {
+    const asset = selectedPortfolio?.assets.find(a => a.id === parseInt(assetId))
+    setSelectedAsset(asset || null)
+    if (asset) {
+      setValue("productId", asset.productId)
+    }
   }
 
   async function onSubmit(data: FormData) {
+    if (!selectedInvestor) {
+      toast({
+        title: "Error",
+        description: "Please select an investor.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const transactionData: CreateTransactionInput = {
+      ...data,
+      userId: selectedInvestor.id,
+    }
+
+    // Validate price and quantity are positive numbers
+    if (transactionData.price <= 0 || transactionData.quantity <= 0) {
+      toast({
+        title: "Invalid Input",
+        description: "Price and quantity must be positive numbers.",
+        variant: "destructive",
+      })
+      return
+    }
+
     try {
       setIsLoading(true)
-      await createTransaction(data)
+      await createTransaction(transactionData)
       toast({
         title: "Success",
         description: "Transaction recorded successfully.",
       })
       router.push("/dashboard/transactions")
       router.refresh()
-    } catch (error) {
+    } catch (error: any) {
       toast({
-        title: "Error",
-        description: "Failed to record transaction.",
+        title: "Error Recording Transaction",
+        description: error?.message || "Failed to record transaction.",
         variant: "destructive",
       })
     } finally {
@@ -130,25 +209,66 @@ export function RecordTransactionForm() {
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid gap-2">
-            <Label htmlFor="portfolioId">Portfolio</Label>
-            <Select onValueChange={handlePortfolioChange} disabled={isLoadingPortfolios}>
+            <Label htmlFor="investorId">Investor</Label>
+            <Select
+              onValueChange={handleInvestorChange}
+              disabled={isLoadingInvestors}
+            >
               <SelectTrigger>
-                <SelectValue placeholder={
-                  isLoadingPortfolios 
+                <SelectValue
+                  placeholder={
+                    isLoadingInvestors
+                      ? "Loading investors..."
+                      : investors.length === 0
+                      ? "No investors available"
+                      : "Select an investor"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {investors.map((investor) => (
+                  <SelectItem key={investor.id} value={investor.id.toString()}>
+                    {investor.full_name} ({investor.email})
+                  </SelectItem>
+                ))}
+                {investors.length === 0 && !isLoadingInvestors && (
+                  <SelectItem value="none" disabled>
+                    No investors available
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="portfolioId">Portfolio</Label>
+            <Select
+              onValueChange={handlePortfolioChange}
+              disabled={!selectedInvestor || isLoadingPortfolios}
+            >
+              <SelectTrigger>
+                <SelectValue
+                  placeholder={
+                    !selectedInvestor
+                      ? "Select an investor first"
+                      : isLoadingPortfolios
                     ? "Loading portfolios..." 
                     : portfolios.length === 0 
                       ? "No portfolios available" 
                       : "Select a portfolio"
-                } />
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
                 {portfolios.map((portfolio) => (
                   <SelectItem key={portfolio.id} value={portfolio.id.toString()}>
-                    {portfolio.name}
+                    {portfolio.name} (Cash: ${portfolio.cashBalance.toFixed(2)})
                   </SelectItem>
                 ))}
-                {portfolios.length === 0 && !isLoadingPortfolios && (
-                  <SelectItem value="none" disabled>No portfolios available</SelectItem>
+                {portfolios.length === 0 && !isLoadingPortfolios && selectedInvestor && (
+                  <SelectItem value="none" disabled>
+                    No portfolios available
+                  </SelectItem>
                 )}
               </SelectContent>
             </Select>
@@ -158,38 +278,42 @@ export function RecordTransactionForm() {
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="assetId">Product</Label>
+            <Label htmlFor="productId">Product</Label>
             <Select 
-              onValueChange={(value) => setValue("assetId", parseInt(value))}
+              onValueChange={handleAssetChange}
               disabled={!selectedPortfolio || isLoadingPortfolios}
             >
               <SelectTrigger>
-                <SelectValue placeholder={
-                  isLoadingPortfolios 
-                    ? "Loading..." 
-                    : !selectedPortfolio 
+                <SelectValue
+                  placeholder={
+                    !selectedPortfolio
                       ? "Select a portfolio first"
+                      : isLoadingPortfolios
+                      ? "Loading..."
                       : selectedPortfolio.assets.length === 0
                         ? "No products available"
                         : "Select a product"
-                } />
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
                 {selectedPortfolio?.assets.map((asset) => (
                   <SelectItem key={asset.id} value={asset.id.toString()}>
                     {asset.productName} (Current: {asset.quantity.toLocaleString(undefined, {
                       minimumFractionDigits: 0,
-                      maximumFractionDigits: 6
+                      maximumFractionDigits: 6,
                     })})
                   </SelectItem>
                 ))}
                 {selectedPortfolio && selectedPortfolio.assets.length === 0 && (
-                  <SelectItem value="none" disabled>No products available in this portfolio</SelectItem>
+                  <SelectItem value="none" disabled>
+                    No products available in this portfolio
+                  </SelectItem>
                 )}
               </SelectContent>
             </Select>
-            {errors.assetId && (
-              <p className="text-sm text-destructive">{errors.assetId.message}</p>
+            {errors.productId && (
+              <p className="text-sm text-destructive">{errors.productId.message}</p>
             )}
           </div>
 
@@ -197,7 +321,9 @@ export function RecordTransactionForm() {
             <Label htmlFor="transactionType">Transaction Type</Label>
             <Select 
               defaultValue={transactionType} 
-              onValueChange={(value) => setValue("transactionType", value as FormData["transactionType"])}
+              onValueChange={(value) =>
+                setValue("transactionType", value as FormData["transactionType"])
+              }
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select type" />
@@ -208,7 +334,9 @@ export function RecordTransactionForm() {
               </SelectContent>
             </Select>
             {errors.transactionType && (
-              <p className="text-sm text-destructive">{errors.transactionType.message}</p>
+              <p className="text-sm text-destructive">
+                {errors.transactionType.message}
+              </p>
             )}
           </div>
 
@@ -254,19 +382,6 @@ export function RecordTransactionForm() {
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="transactionDate">Transaction Date</Label>
-            <Input
-              id="transactionDate"
-              type="datetime-local"
-              {...register("transactionDate")}
-              className={errors.transactionDate ? "border-destructive" : ""}
-            />
-            {errors.transactionDate && (
-              <p className="text-sm text-destructive">{errors.transactionDate.message}</p>
-            )}
-          </div>
-
-          <div className="grid gap-2">
             <Label htmlFor="notes">Notes (Optional)</Label>
             <Textarea
               id="notes"
@@ -287,7 +402,10 @@ export function RecordTransactionForm() {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading || isLoadingPortfolios}>
+            <Button
+              type="submit"
+              disabled={isLoading || isLoadingInvestors || isLoadingPortfolios}
+            >
               {isLoading ? "Recording..." : "Record Transaction"}
             </Button>
           </div>

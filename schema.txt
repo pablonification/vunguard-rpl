@@ -1,0 +1,202 @@
+Table "public.accounts"
+Column	Type	Collation	Nullable	Default
+id	integer		not null	nextval('accounts_id_seq'::regclass)
+username	character varying(50)		not null	
+password	character varying(255)		not null	
+email	character varying(100)		not null	
+full_name	character varying(100)		not null	
+role	character varying(20)		not null	
+created_at	timestamp with time zone			CURRENT_TIMESTAMP
+updated_at	timestamp with time zone			CURRENT_TIMESTAMP
+Indexes:
+"accounts_pkey" PRIMARY KEY, btree (id)
+"accounts_email_key" UNIQUE CONSTRAINT, btree (email)
+"accounts_username_key" UNIQUE CONSTRAINT, btree (username)
+Check constraints:
+"accounts_role_check" CHECK (role::text = ANY (ARRAY['investor'::character varying, 'manager'::character varying, 'analyst'::character varying, 'admin'::character varying]::text[]))
+Referenced by:
+TABLE "allocation_targets" CONSTRAINT "allocation_targets_set_by_fkey" FOREIGN KEY (set_by) REFERENCES accounts(id)
+TABLE "cash_transactions" CONSTRAINT "cash_transactions_created_by_fkey" FOREIGN KEY (created_by) REFERENCES accounts(id)
+TABLE "notifications" CONSTRAINT "notifications_recipient_id_fkey" FOREIGN KEY (recipient_id) REFERENCES accounts(id) ON DELETE CASCADE
+TABLE "notifications" CONSTRAINT "notifications_sender_id_fkey" FOREIGN KEY (sender_id) REFERENCES accounts(id)
+TABLE "portfolios" CONSTRAINT "portfolios_account_id_fkey" FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
+
+Table "public.assets"
+Column	Type	Collation	Nullable	Default
+id	integer		not null	nextval('assets_id_seq'::regclass)
+portfolio_id	integer		not null	
+product_id	integer		not null	
+quantity	numeric(18,6)		not null	
+purchase_price	numeric(18,6)		not null	
+current_price	numeric(18,6)		not null	
+allocation_percentage	numeric(5,2)			
+created_at	timestamp with time zone			CURRENT_TIMESTAMP
+updated_at	timestamp with time zone			CURRENT_TIMESTAMP
+Indexes:
+"assets_pkey" PRIMARY KEY, btree (id)
+"assets_portfolio_id_product_id_key" UNIQUE CONSTRAINT, btree (portfolio_id, product_id)
+Foreign-key constraints:
+"assets_portfolio_id_fkey" FOREIGN KEY (portfolio_id) REFERENCES portfolios(id) ON DELETE CASCADE
+"assets_product_id_fkey" FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+Referenced by:
+TABLE "asset_history" CONSTRAINT "asset_history_asset_id_fkey" FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE
+TABLE "performances" CONSTRAINT "performances_asset_id_fkey" FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE
+TABLE "transactions" CONSTRAINT "transactions_asset_id_fkey" FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE
+
+Table "public.allocation_targets"
+Column	Type	Collation	Nullable	Default
+id	integer		not null	nextval('allocation_targets_id_seq'::regclass)
+portfolio_id	integer		not null	
+product_id	integer		not null	
+target_percentage	numeric(5,2)		not null	
+set_by	integer		not null	
+created_at	timestamp with time zone			CURRENT_TIMESTAMP
+updated_at	timestamp with time zone			CURRENT_TIMESTAMP
+Indexes:
+"allocation_targets_pkey" PRIMARY KEY, btree (id)
+"allocation_targets_portfolio_id_product_id_key" UNIQUE CONSTRAINT, btree (portfolio_id, product_id)
+Check constraints:
+"allocation_targets_target_percentage_check" CHECK (target_percentage >= 0::numeric AND target_percentage <= 100::numeric)
+Foreign-key constraints:
+"allocation_targets_portfolio_id_fkey" FOREIGN KEY (portfolio_id) REFERENCES portfolios(id) ON DELETE CASCADE
+"allocation_targets_product_id_fkey" FOREIGN KEY (product_id) REFERENCES products(id)
+"allocation_targets_set_by_fkey" FOREIGN KEY (set_by) REFERENCES accounts(id)
+
+Table "public.cash_transactions"
+Column	Type	Collation	Nullable	Default
+id	integer		not null	nextval('cash_transactions_id_seq'::regclass)
+portfolio_id	integer		not null	
+type	character varying(10)		not null	
+amount	numeric(20,2)		not null	
+transaction_date	timestamp with time zone			CURRENT_TIMESTAMP
+created_by	integer		not null	
+notes	text			
+created_at	timestamp with time zone			CURRENT_TIMESTAMP
+Indexes:
+"cash_transactions_pkey" PRIMARY KEY, btree (id)
+"idx_cash_transactions_portfolio" btree (portfolio_id)
+Check constraints:
+"cash_transactions_type_check" CHECK (type::text = ANY (ARRAY['deposit'::character varying, 'withdrawal'::character varying]::text[]))
+Foreign-key constraints:
+"cash_transactions_created_by_fkey" FOREIGN KEY (created_by) REFERENCES accounts(id)
+"cash_transactions_portfolio_id_fkey" FOREIGN KEY (portfolio_id) REFERENCES portfolios(id) ON DELETE CASCADE
+
+Table "public.notifications"
+Column	Type	Collation	Nullable	Default
+id	integer		not null	nextval('notifications_id_seq'::regclass)
+recipient_id	integer		not null	
+sender_id	integer			
+type	character varying(50)		not null	
+title	character varying(255)		not null	
+message	text		not null	
+is_read	boolean			false
+created_at	timestamp with time zone			CURRENT_TIMESTAMP
+Indexes:
+"notifications_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+"notifications_recipient_id_fkey" FOREIGN KEY (recipient_id) REFERENCES accounts(id) ON DELETE CASCADE
+"notifications_sender_id_fkey" FOREIGN KEY (sender_id) REFERENCES accounts(id)
+
+Table "public.performances"
+Column	Type	Collation	Nullable	Default
+id	integer		not null	nextval('performances_id_seq'::regclass)
+portfolio_id	integer			
+asset_id	integer			
+date	date		not null	
+value	numeric(18,6)		not null	
+return_percentage	numeric(8,4)			
+benchmark_comparison	numeric(8,4)			
+created_at	timestamp with time zone			CURRENT_TIMESTAMP
+Indexes:
+"performances_pkey" PRIMARY KEY, btree (id)
+Check constraints:
+"performances_check" CHECK (portfolio_id IS NOT NULL AND asset_id IS NULL OR portfolio_id IS NULL AND asset_id IS NOT NULL)
+Foreign-key constraints:
+"performances_asset_id_fkey" FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE
+"performances_portfolio_id_fkey" FOREIGN KEY (portfolio_id) REFERENCES portfolios(id) ON DELETE CASCADE
+
+Table "public.portfolios"
+Column	Type	Collation	Nullable	Default
+id	integer		not null	nextval('portfolios_id_seq'::regclass)
+account_id	integer		not null	
+name	character varying(100)		not null	
+description	text			
+created_at	timestamp with time zone			CURRENT_TIMESTAMP
+updated_at	timestamp with time zone			CURRENT_TIMESTAMP
+cash_balance	numeric(20,2)			0.00
+Indexes:
+"portfolios_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+"portfolios_account_id_fkey" FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
+Referenced by:
+TABLE "allocation_targets" CONSTRAINT "allocation_targets_portfolio_id_fkey" FOREIGN KEY (portfolio_id) REFERENCES portfolios(id) ON DELETE CASCADE
+TABLE "assets" CONSTRAINT "assets_portfolio_id_fkey" FOREIGN KEY (portfolio_id) REFERENCES portfolios(id) ON DELETE CASCADE
+TABLE "cash_transactions" CONSTRAINT "cash_transactions_portfolio_id_fkey" FOREIGN KEY (portfolio_id) REFERENCES portfolios(id) ON DELETE CASCADE
+TABLE "performances" CONSTRAINT "performances_portfolio_id_fkey" FOREIGN KEY (portfolio_id) REFERENCES portfolios(id) ON DELETE CASCADE
+TABLE "transactions" CONSTRAINT "transactions_portfolio_id_fkey" FOREIGN KEY (portfolio_id) REFERENCES portfolios(id) ON DELETE CASCADE
+
+Table "public.products"
+Column	Type	Collation	Nullable	Default
+id	integer		not null	nextval('products_id_seq'::regclass)
+code	character varying(20)		not null	
+name	character varying(100)		not null	
+description	text			
+investment_strategy	text			
+risk_level	character varying(20)		not null	
+created_at	timestamp with time zone			CURRENT_TIMESTAMP
+updated_at	timestamp with time zone			CURRENT_TIMESTAMP
+Indexes:
+"products_pkey" PRIMARY KEY, btree (id)
+"products_code_key" UNIQUE CONSTRAINT, btree (code)
+Referenced by:
+TABLE "allocation_targets" CONSTRAINT "allocation_targets_product_id_fkey" FOREIGN KEY (product_id) REFERENCES products(id)
+TABLE "assets" CONSTRAINT "assets_product_id_fkey" FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+
+Table "public.transactions"
+Column	Type	Collation	Nullable	Default
+id	integer		not null	nextval('transactions_id_seq'::regclass)
+portfolio_id	integer		not null	
+asset_id	integer		not null	
+transaction_type	character varying(10)		not null	
+quantity	numeric(18,6)		not null	
+price	numeric(18,6)		not null	
+transaction_date	timestamp with time zone		not null	
+notes	text			
+created_at	timestamp with time zone			CURRENT_TIMESTAMP
+Indexes:
+"transactions_pkey" PRIMARY KEY, btree (id)
+Check constraints:
+"transactions_transaction_type_check" CHECK (transaction_type::text = ANY (ARRAY['buy'::character varying, 'sell'::character varying]::text[]))
+Foreign-key constraints:
+"transactions_asset_id_fkey" FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE
+"transactions_portfolio_id_fkey" FOREIGN KEY (portfolio_id) REFERENCES portfolios(id) ON DELETE CASCADE
+
+Table "public.recommendations"
+Column	Type	Collation	Nullable	Default
+id	integer		not null	nextval('recommendations_id_seq'::regclass)
+analyst_id	integer		not null	
+product_id	integer		not null	
+type	character varying(20)		not null	
+target_price	numeric(20,2)		not null	
+current_price	numeric(20,2)		not null	
+confidence	integer		not null	
+timeframe	character varying(50)		not null	
+rationale	text		not null	
+technical_analysis	text			
+fundamental_analysis	text			
+risks	text			
+status	character varying(20)		not null	'pending'::character varying
+created_at	timestamp with time zone			CURRENT_TIMESTAMP
+updated_at	timestamp with time zone			CURRENT_TIMESTAMP
+implemented_at	timestamp with time zone			
+Indexes:
+"recommendations_pkey" PRIMARY KEY, btree (id)
+"idx_recommendations_analyst" btree (analyst_id)
+"idx_recommendations_created_at" btree (created_at)
+"idx_recommendations_product" btree (product_id)
+"idx_recommendations_status" btree (status)
+Check constraints:
+"recommendations_confidence_check" CHECK (confidence >= 1 AND confidence <= 5)
+Foreign-key constraints:
+"recommendations_analyst_id_fkey" FOREIGN KEY (analyst_id) REFERENCES accounts(id) ON DELETE CASCADE
+"recommendations_product_id_fkey" FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE

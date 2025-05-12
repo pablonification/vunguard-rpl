@@ -12,3 +12,10 @@ export function formatDate(date: Date) {
     day: 'numeric',
   }).format(new Date(date))
 }
+
+export function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(value);
+}

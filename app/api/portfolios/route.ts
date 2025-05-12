@@ -2,21 +2,37 @@ import { sql } from '@vercel/postgres';
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await getSession();
     if (!session) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const accountId = session.id;
-    // console.log('Fetching portfolios for account:', accountId);
+    // Get userId from query params
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get('userId');
 
-    // Get portfolios for the logged-in user with their assets and product information
+    // If no userId provided and user is an investor, use their own id
+    // If no userId provided and user is manager/admin, return error
+    let accountId = session.id;
+    if (session.role === 'investor') {
+      if (userId && userId !== session.id.toString()) {
+        return new NextResponse('Forbidden', { status: 403 });
+      }
+    } else if (['manager', 'admin'].includes(session.role)) {
+      if (!userId) {
+        return new NextResponse('UserId is required for managers and admins', { status: 400 });
+      }
+      accountId = parseInt(userId);
+    }
+
+    // Get portfolios for the specified user with their assets and product information
     const result = await sql`
       SELECT 
         p.id as portfolio_id,
         p.name as portfolio_name,
+        p.cash_balance,
         a.id as asset_id,
         a.quantity as asset_quantity,
         pr.id as product_id,
@@ -28,8 +44,6 @@ export async function GET() {
       ORDER BY p.name, pr.name
     `;
 
-    // console.log('Query result rows:', result.rows.length);
-
     // Transform the flat results into a nested structure
     const portfoliosMap = new Map();
 
@@ -38,6 +52,7 @@ export async function GET() {
         portfoliosMap.set(row.portfolio_id, {
           id: row.portfolio_id,
           name: row.portfolio_name,
+          cashBalance: parseFloat(row.cash_balance || 0),
           assets: [],
         });
       }
@@ -55,7 +70,6 @@ export async function GET() {
     });
 
     const portfolios = Array.from(portfoliosMap.values());
-    // console.log('Transformed portfolios:', portfolios);
 
     return NextResponse.json(portfolios);
   } catch (error) {
