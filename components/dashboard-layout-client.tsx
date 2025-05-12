@@ -78,6 +78,16 @@ export function DashboardLayoutClient({
     router.push("/dashboard/profile"); // Navigate to profile/settings page
   };
 
+  const handleLogoClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    // Direct admins to accounts page, others to dashboard
+    if (session.role === 'admin') {
+      router.push('/dashboard/accounts');
+    } else {
+      router.push('/dashboard');
+    }
+  };
+
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar */}
@@ -88,7 +98,8 @@ export function DashboardLayoutClient({
         )}
       >
         <Link
-          href="/dashboard"
+          href="#"
+          onClick={handleLogoClick}
           className={cn(
             "mb-8 relative flex items-center justify-center overflow-hidden", // Added overflow-hidden
             "transition-all duration-300 ease-in-out",

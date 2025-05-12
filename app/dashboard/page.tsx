@@ -15,17 +15,23 @@ import { TopUpDialog } from "./topup-dialog"
 import { Button } from "@/components/ui/button"
 import { Coins } from "lucide-react"
 import InvestorSelect from "./investor-select"
+import { redirect } from "next/navigation"
 
 interface SearchParams {
   investorId?: string;
 }
 
 export default async function DashboardPage({ searchParams }: { searchParams: SearchParams }) {
-  // Get current user
-  const session = await requireAuth()
+  // Get current user with explicit authorization
+  const session = await requireAuth(["investor", "manager", "analyst"])
+  
+  // Redirect admin to accounts page if they somehow access the dashboard
+  if (session.role === "admin") {
+    redirect("/dashboard/accounts")
+  }
   
   // Determine if user is authorized to select investors (manager, admin, or analyst)
-  const canSelectInvestor = ['manager', 'admin', 'analyst'].includes(session.role as string);
+  const canSelectInvestor = ['manager', 'analyst'].includes(session.role as string);
   
   // Determine which account to show data for
   let targetAccountId: number;
@@ -71,7 +77,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
     <DashboardLayout>
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           {session.role === 'investor' && (
             <TopUpDialog accountId={accountId} />
           )}

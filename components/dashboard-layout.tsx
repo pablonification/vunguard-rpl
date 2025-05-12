@@ -14,14 +14,18 @@ export async function DashboardLayout({ children, requiredRoles }: DashboardLayo
 
   // Perform session and role checks here on the server
   if (!session) {
+    console.log("No session found, redirecting to login")
     redirect("/login")
-    // Important: When redirecting in a Server Component, you usually don't render anything else.
-    // However, Next.js handles this. For clarity, often people return null or an empty fragment,
-    // but redirect itself should suffice to stop further rendering of this path.
   }
 
   if (requiredRoles && !requiredRoles.includes(session.role as string)) {
+    console.log(`User with role '${session.role}' attempted to access a page restricted to roles: ${requiredRoles.join(", ")}`)
     redirect("/unauthorized")
+  }
+
+  // Direct admins to accounts page if they try to access the main dashboard
+  if (session.role === 'admin' && !requiredRoles?.includes('admin') && !requiredRoles?.length) {
+    redirect("/dashboard/accounts")
   }
 
   // Pass the fetched session to the Client Component

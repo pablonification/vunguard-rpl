@@ -68,6 +68,70 @@ export async function getPortfolios(accountId: number): Promise<Portfolio[]> {
   }
 }
 
+// Function to delete a portfolio
+export async function deletePortfolio(portfolioId: number, accountId: number): Promise<{ success: boolean, message: string }> {
+  try {
+    // First verify the portfolio belongs to the account
+    const verifyQuery = `
+      SELECT id FROM portfolios 
+      WHERE id = $1 AND account_id = $2
+    `;
+    const verifyResult = await executeQuery(verifyQuery, [portfolioId, accountId]);
+    
+    if (!verifyResult || verifyResult.length === 0) {
+      return { 
+        success: false, 
+        message: "Portfolio not found or you don't have permission to delete it" 
+      };
+    }
+    
+    // Use a transaction to ensure data integrity
+    await executeQuery('BEGIN', []);
+    
+    try {
+      // Delete related transactions
+      await executeQuery(`
+        DELETE FROM transactions 
+        WHERE portfolio_id = $1
+      `, [portfolioId]);
+      
+      // Delete related performances
+      await executeQuery(`
+        DELETE FROM performances 
+        WHERE portfolio_id = $1
+      `, [portfolioId]);
+      
+      // Delete related assets
+      await executeQuery(`
+        DELETE FROM assets 
+        WHERE portfolio_id = $1
+      `, [portfolioId]);
+      
+      // Finally delete the portfolio itself
+      await executeQuery(`
+        DELETE FROM portfolios 
+        WHERE id = $1
+      `, [portfolioId]);
+      
+      await executeQuery('COMMIT', []);
+      
+      return { 
+        success: true, 
+        message: "Portfolio and all related data deleted successfully" 
+      };
+    } catch (error) {
+      await executeQuery('ROLLBACK', []);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error deleting portfolio:', error);
+    return { 
+      success: false, 
+      message: `Error deleting portfolio: ${error instanceof Error ? error.message : 'Unknown error'}` 
+    };
+  }
+}
+
 // Helper function to format currency
 export function formatCurrency(value: number | string): string {
   const numValue = typeof value === 'string' ? parseFloat(value) : value

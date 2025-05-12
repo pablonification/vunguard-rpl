@@ -5,8 +5,10 @@ import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import type { PortfolioPerformance, AssetAllocation, PerformanceOverTime } from "@/lib/db/models/performance";
 import InvestorSelect from "./investor-select";
+import { requireAuth } from "@/lib/auth";
+import { JWTPayload } from "jose";
 
-interface Session {
+interface Session extends JWTPayload {
   id: string | number;
   role?: string;
   // Add other session properties as needed
@@ -67,15 +69,11 @@ const generateMockRiskAllocation = (assetAllocations: Array<{name: string; value
 // --- END MOCK DATA GENERATION ---
 
 export default async function PerformancePage({ searchParams }: { searchParams: { investorId?: string } }) {
-  const session = await getSession() as Session | null;
+  // Get current user with explicit authorization
+  const session = await requireAuth(["investor", "manager", "analyst"]);
   
-  if (!session || !session.id) { // Ensure session.id exists
-    redirect("/login");
-    return; // Add return to stop execution after redirect
-  }
-
-  // Determine if user is authorized to select investors (manager, admin, or analyst)
-  const canSelectInvestor = ['manager', 'admin', 'analyst'].includes(session.role as string);
+  // Determine if user is authorized to select investors (manager or analyst)
+  const canSelectInvestor = ['manager', 'analyst'].includes(session.role as string);
   
   // Determine which account to show data for
   let targetAccountId: number;
@@ -86,11 +84,11 @@ export default async function PerformancePage({ searchParams }: { searchParams: 
     if (isNaN(targetAccountId)) {
       console.error("Invalid investorId in URL:", searchParams.investorId);
       // Fall back to the session's own ID
-      targetAccountId = typeof session.id === 'string' ? parseInt(session.id, 10) : session.id;
+      targetAccountId = typeof session.id === 'string' ? parseInt(session.id as string, 10) : Number(session.id || 0);
     }
   } else {
     // Otherwise use session ID (for regular users or if no selection)
-    targetAccountId = typeof session.id === 'string' ? parseInt(session.id, 10) : session.id;
+    targetAccountId = typeof session.id === 'string' ? parseInt(session.id as string, 10) : Number(session.id || 0);
   }
   
   if (isNaN(targetAccountId)) {

@@ -35,30 +35,54 @@ export type Transaction = z.infer<typeof transactionSchema> & {
 };
 
 // Database functions
-export async function getTransactions() {
+export async function getTransactions(accountId?: number) {
   noStore(); // Add noStore
   try {
     // Re-check this query later, ensure it joins correctly and calculates total
     const connectionString = process.env.POSTGRES_URL!;
     const sql = neon(connectionString);
-    const result = await sql`
-      SELECT 
-        t.id,
-        t.transaction_type,
-        t.quantity,
-        t.price,
-        t.transaction_date,
-        t.notes,
-        t.created_at,
-        p.name as portfolio_name,
-        pr.name as product_name,
-        t.asset_id -- Include asset_id if needed elsewhere
-      FROM transactions t
-      JOIN portfolios p ON t.portfolio_id = p.id
-      JOIN assets a ON t.asset_id = a.id
-      JOIN products pr ON a.product_id = pr.id
-      ORDER BY t.transaction_date DESC, t.created_at DESC
-    `;
+    
+    // If accountId is provided, filter transactions for that user
+    const query = accountId 
+      ? sql`
+          SELECT 
+            t.id,
+            t.transaction_type,
+            t.quantity,
+            t.price,
+            t.transaction_date,
+            t.notes,
+            t.created_at,
+            p.name as portfolio_name,
+            pr.name as product_name,
+            t.asset_id
+          FROM transactions t
+          JOIN portfolios p ON t.portfolio_id = p.id
+          JOIN assets a ON t.asset_id = a.id
+          JOIN products pr ON a.product_id = pr.id
+          WHERE p.account_id = ${accountId}
+          ORDER BY t.transaction_date DESC, t.created_at DESC
+        `
+      : sql`
+          SELECT 
+            t.id,
+            t.transaction_type,
+            t.quantity,
+            t.price,
+            t.transaction_date,
+            t.notes,
+            t.created_at,
+            p.name as portfolio_name,
+            pr.name as product_name,
+            t.asset_id
+          FROM transactions t
+          JOIN portfolios p ON t.portfolio_id = p.id
+          JOIN assets a ON t.asset_id = a.id
+          JOIN products pr ON a.product_id = pr.id
+          ORDER BY t.transaction_date DESC, t.created_at DESC
+        `;
+    
+    const result = await query;
     
     return result.map((row: any) => ({
       id: row.id,

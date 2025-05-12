@@ -33,9 +33,14 @@ export function LoginForm() {
       if (result.success) {
         toast({
           title: "Login successful",
-          description: "Redirecting to dashboard...",
+          description: "Redirecting...",
         })
-        router.push("/dashboard")
+        // Redirect admin to the accounts page, others to dashboard
+        if (result.role === 'admin') {
+          router.push("/dashboard/accounts")
+        } else {
+          router.push("/dashboard")
+        }
         router.refresh()
       } else {
         setError(result.error || "Invalid credentials")

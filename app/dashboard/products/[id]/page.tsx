@@ -15,11 +15,8 @@ interface ProductPageProps {
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
-  // Get current user and verify authorization
-  const session = await requireAuth()
-  if (!["manager", "analyst", "admin"].includes(session.role)) {
-    throw new Error("Unauthorized")
-  }
+  // Get current user and verify authorization with explicit roles
+  const session = await requireAuth(["manager", "analyst"])
 
   // Ensure params.id is properly awaited and parsed
   const productId = parseInt(params.id, 10)
@@ -57,8 +54,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </Link>
             <h1 className="text-3xl font-bold tracking-tight">{product.name}</h1>
           </div>
-          {/* Only show edit/delete buttons for managers and admins */}
-          {(session.role === "manager" || session.role === "admin") && (
+          {/* Only show edit/delete buttons for managers */}
+          {session.role === "manager" && (
             <div className="flex gap-2">
               <Link href={`/dashboard/products/${product.id}/edit`}>
                 <Button variant="outline">

@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,11 +11,16 @@ import { AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { createPortfolio } from "./actions"
 
-export function CreatePortfolioForm() {
+interface CreatePortfolioFormProps {
+  investorId: number | null;
+}
+
+export function CreatePortfolioForm({ investorId }: CreatePortfolioFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
   const { toast } = useToast()
+  const searchParams = useSearchParams()
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -27,14 +32,19 @@ export function CreatePortfolioForm() {
     const description = formData.get("description") as string
 
     try {
-      const result = await createPortfolio(name, description)
+      const result = await createPortfolio(name, description, investorId)
 
       if (result.success) {
         toast({
           title: "Portfolio created",
-          description: "Your new portfolio has been created successfully.",
+          description: "The new portfolio has been created successfully.",
         })
-        router.push("/dashboard/portfolios")
+        // If we're creating for another investor, keep their ID in the URL
+        if (investorId) {
+          router.push(`/dashboard/portfolios?investorId=${investorId}`)
+        } else {
+          router.push("/dashboard/portfolios")
+        }
         router.refresh()
       } else {
         setError(result.error || "Failed to create portfolio")

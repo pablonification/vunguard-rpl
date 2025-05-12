@@ -8,12 +8,9 @@ import { getProducts } from "@/lib/db/models/product"
 import { requireAuth } from "@/lib/auth"
 
 export default async function ProductsPage() {
-  // Get current user and verify authorization
-  const session = await requireAuth()
-  if (!["manager", "analyst", "admin"].includes(session.role)) {
-    throw new Error("Unauthorized")
-  }
-
+  // Get current user and verify authorization with explicit roles
+  const session = await requireAuth(["manager", "analyst"])
+  
   // Fetch products from database
   const products = await getProducts()
 
@@ -22,8 +19,8 @@ export default async function ProductsPage() {
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold tracking-tight">Products</h1>
-          {/* Only show Add Product button for managers and admins */}
-          {(session.role === "manager" || session.role === "admin") && (
+          {/* Only show Add Product button for managers */}
+          {session.role === "manager" && (
             <Link href="/dashboard/products/new">
               <Button>
                 <Plus className="mr-2 h-4 w-4" /> Add Product

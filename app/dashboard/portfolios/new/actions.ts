@@ -4,14 +4,34 @@ import { sql } from "@vercel/postgres"
 import { getSession } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 
-export async function createPortfolio(name: string, description?: string) {
+export async function createPortfolio(name: string, description?: string, targetInvestorId?: number | null) {
   try {
     const session = await getSession()
     if (!session) {
       return { success: false, error: "Unauthorized" }
     }
 
-    const accountId = session.id
+    // Determine the account ID to create the portfolio for
+    let accountId: number;
+    
+    // If the user is a manager and a target investor ID is provided
+    if (session.role === 'manager' && targetInvestorId) {
+      // Verify the target investor exists and has investor role
+      const investorCheck = await sql`
+        SELECT id FROM accounts 
+        WHERE id = ${targetInvestorId} AND role = 'investor'
+      `
+      
+      if (investorCheck.rows.length === 0) {
+        return { success: false, error: "Invalid investor selected" }
+      }
+      
+      // Use the target investor's ID
+      accountId = targetInvestorId
+    } else {
+      // Otherwise, use the current user's ID
+      accountId = Number(session.id)
+    }
 
     // Validate input
     if (!name.trim()) {
@@ -38,8 +58,8 @@ export async function createPortfolio(name: string, description?: string) {
 
     // Create the portfolio
     const result = await sql`
-      INSERT INTO portfolios (name, description, account_id, created_at, updated_at)
-      VALUES (${name}, ${description || null}, ${accountId}, NOW(), NOW())
+      INSERT INTO portfolios (name, description, account_id, created_at, updated_at, cash_balance)
+      VALUES (${name}, ${description || null}, ${accountId}, NOW(), NOW(), 0)
       RETURNING id
     `
 

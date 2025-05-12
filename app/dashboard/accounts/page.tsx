@@ -7,8 +7,12 @@ import Link from "next/link"
 import { getAccounts } from "@/lib/db/models/account"
 import { formatDate } from "@/lib/utils"
 import { DeleteAccountButton } from "./delete-account-button"
+import { requireAuth } from "@/lib/auth"
 
 export default async function AccountsPage() {
+  // Get current user with explicit admin role verification
+  const session = await requireAuth(["admin"])
+  
   const accounts = await getAccounts()
 
   return (

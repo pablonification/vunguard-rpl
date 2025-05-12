@@ -6,6 +6,15 @@ import { executeQuery } from "@/lib/db"
 import { requireAuth } from "@/lib/auth"
 import { notFound } from "next/navigation"
 
+// Add a function to check if a portfolio exists and get its owner's account ID
+async function getPortfolioOwner(portfolioId: number) {
+  const query = `
+    SELECT account_id FROM portfolios WHERE id = $1
+  `
+  const result = await executeQuery(query, [portfolioId])
+  return result[0]?.account_id
+}
+
 async function getPortfolioDetails(portfolioId: number, accountId: number) {
   const query = `
     WITH latest_performance AS (
@@ -63,28 +72,77 @@ async function getPortfolioAssets(portfolioId: number) {
   return result
 }
 
-export default async function PortfolioPage({ params }: { params: { id: string } }) {
-  const session = await requireAuth()
-  const accountQuery = "SELECT id FROM accounts WHERE id = $1"
-  const accountResult = await executeQuery(accountQuery, [session.id])
-  const accountId = accountResult[0]?.id
+// Get account name for displaying title
+async function getAccountName(accountId: number) {
+  const query = `SELECT full_name FROM accounts WHERE id = $1`
+  const result = await executeQuery(query, [accountId])
+  return result[0]?.full_name
+}
 
-  if (!accountId) {
-    throw new Error('Account not found')
-  }
+interface PortfolioPageProps {
+  params: { id: string };
+  searchParams: { investorId?: string };
+}
 
+export default async function PortfolioPage({ params, searchParams }: PortfolioPageProps) {
+  const session = await requireAuth(['investor', 'manager', 'analyst'])
+  
+  // Determine if user is authorized to select investors
+  const canViewOtherPortfolios = ['manager', 'analyst'].includes(session.role as string)
+  
   const portfolioId = parseInt(params.id)
   if (isNaN(portfolioId)) {
     return notFound()
   }
 
+  // First check if the portfolio exists and who it belongs to
+  const portfolioOwnerAccountId = await getPortfolioOwner(portfolioId)
+  if (!portfolioOwnerAccountId) {
+    return notFound()
+  }
+
+  // Determine which account's portfolio to show
+  let targetAccountId: number
+  
+  // If user is manager/analyst and an investorId is in the URL
+  if (canViewOtherPortfolios && searchParams.investorId) {
+    const requestedInvestorId = parseInt(searchParams.investorId, 10)
+    
+    // Verify the portfolio actually belongs to the requested investor
+    if (!isNaN(requestedInvestorId) && requestedInvestorId === portfolioOwnerAccountId) {
+      targetAccountId = requestedInvestorId
+    } else {
+      // If investorId in URL doesn't match the portfolio owner, return not found
+      return notFound()
+    }
+  } else {
+    // For regular users or if no investorId in URL, check if the portfolio belongs to them
+    const userAccountId = typeof session.id === 'string' ? parseInt(session.id, 10) : Number(session.id || 0)
+    
+    if (portfolioOwnerAccountId === userAccountId) {
+      targetAccountId = userAccountId
+    } else if (canViewOtherPortfolios) {
+      // For managers/analysts, allow viewing any portfolio even without investorId in URL
+      targetAccountId = portfolioOwnerAccountId
+    } else {
+      // For investors who don't own this portfolio
+      return notFound()
+    }
+  }
+
   const [portfolio, assets] = await Promise.all([
-    getPortfolioDetails(portfolioId, accountId),
+    getPortfolioDetails(portfolioId, targetAccountId),
     getPortfolioAssets(portfolioId)
   ])
 
   if (!portfolio) {
     return notFound()
+  }
+
+  // Get account name if viewing another investor's portfolio
+  let investorName = null
+  if (canViewOtherPortfolios && targetAccountId !== Number(session.id)) {
+    investorName = await getAccountName(targetAccountId)
   }
 
   // Calculate total gain/loss
@@ -95,6 +153,9 @@ export default async function PortfolioPage({ params }: { params: { id: string }
       <div className="flex flex-col gap-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{portfolio.name}</h1>
+          {investorName && (
+            <p className="text-sm text-muted-foreground mt-1">Portfolio owned by {investorName}</p>
+          )}
           {portfolio.description && (
             <p className="mt-2 text-muted-foreground">{portfolio.description}</p>
           )}
