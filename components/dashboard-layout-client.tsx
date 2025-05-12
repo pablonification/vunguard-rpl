@@ -93,7 +93,7 @@ export function DashboardLayoutClient({
       {/* Sidebar */}
       <aside 
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex flex-col items-center border-r border-border bg-card/80 backdrop-blur-sm py-5 transition-all duration-300 ease-in-out dark:bg-card/40",
+          "fixed inset-y-0 left-0 z-50 hidden md:flex flex-col items-center border-r border-border bg-card/80 backdrop-blur-sm py-5 transition-all duration-300 ease-in-out dark:bg-card/40",
           isSidebarExpanded ? "w-60" : "w-20"
         )}
       >
@@ -154,7 +154,7 @@ export function DashboardLayoutClient({
       <div 
         className={cn(
           "flex flex-1 flex-col transition-all duration-300 ease-in-out", 
-          isSidebarExpanded ? "ml-60" : "ml-20"
+          isSidebarExpanded ? "md:ml-60" : "md:ml-20"
         )}
       >
         {/* Header */}
