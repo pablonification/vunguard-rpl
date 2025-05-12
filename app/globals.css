@@ -7,28 +7,29 @@
     /* Light theme */
     --background: 0 0% 100%;
     --foreground: 240 10% 3.9%;
-    
+
     --card: 0 0% 100%;
     --card-foreground: 240 10% 3.9%;
-    
+
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    
-    /* Using Malachite for primary */
+
+    /* Malachite */
     --primary: 142 70% 45%;
-    --primary-foreground: 355 100% 100%;
-    
-    /* Electric Violet for secondary */
+    --primary-foreground: 0 0% 100%;
+
+    /* Electric Violet */
     --secondary: 265 89% 78%;
     --secondary-foreground: 240 5.9% 10%;
-    
+
     --muted: 240 4.8% 95.9%;
     --muted-foreground: 240 3.8% 46.1%;
-    
-    --accent: 210 40% 96.1%;
+
+    /* Accent: light blue, 90% lightness (instead of 96%) */
+    --accent: 210 40% 90%;
     --accent-foreground: 222.2 47.4% 11.2%;
-    
-    /* Crimson for destructive */
+
+    /* Crimson */
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
@@ -38,51 +39,43 @@
 
     --radius: 0.75rem;
   }
- 
+
   .dark {
-    /* Using soft dark background instead of pure black */
+    /* Dark mode base */
     --background: 224 71% 4%;
     --foreground: 0 0% 95%;
-    
-    /* Using darker blue-gray for card */
+
     --card: 222 47% 11%;
     --card-foreground: 0 0% 95%;
-    
-    /* Using deep blue-gray for popover */
+
     --popover: 223 47% 11%;
     --popover-foreground: 0 0% 95%;
-    
-    /* Using Malachite Light with adjusted saturation */
+
     --primary: 142 84% 65%;
     --primary-foreground: 224 71% 4%;
-    
-    /* Using Electric Violet Light with adjusted brightness */
+
     --secondary: 265 100% 66%;
     --secondary-foreground: 0 0% 95%;
-    
-    /* Using soft dark variants for muted */
+
     --muted: 223 47% 11%;
     --muted-foreground: 224 64% 94%;
-    
-    /* Using Electric Violet with adjusted saturation */
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    
-    /* Using Crimson Dark with adjusted tone */
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 0 0% 95%;
 
-    /* Using soft dark variants for borders and inputs */
+    /* Accent: low lightness so bg-accent/10 is just a hint above the dark */
+    --accent: 210 40% 14%;
+    --accent-foreground: 0 0% 95%;
+
+    --destructive: 0 70% 60%;
+    --destructive-foreground: 0 0% 98%;
+
     --border: 216 34% 17%;
     --input: 216 34% 17%;
     --ring: 265 89% 78%;
 
-    /* Chart colors using the style guide with adjusted saturation */
-    --chart-1: 142 84% 65%; /* Malachite */
-    --chart-2: 265 89% 78%; /* Electric Violet */
-    --chart-3: 0 84% 60%;   /* Crimson */
-    --chart-4: 265 100% 66%; /* Electric Violet Light */
-    --chart-5: 142 70% 45%; /* Malachite Dark */
+    --chart-1: 142 84% 65%;
+    --chart-2: 265 89% 78%;
+    --chart-3: 0 84% 60%;
+    --chart-4: 265 100% 66%;
+    --chart-5: 142 70% 45%;
   }
 }
 
@@ -104,8 +97,14 @@
 }
 
 .gradient-border {
-  background: linear-gradient(var(--background), var(--background)) padding-box,
-              linear-gradient(to right, hsl(265, 89%, 78%), hsl(142, 84%, 65%)) border-box;
+  background: linear-gradient(var(--background), var(--background))
+      padding-box,
+    linear-gradient(
+        to right,
+        hsl(var(--secondary)),
+        hsl(var(--primary))
+      )
+      border-box;
   border: 1px solid transparent;
 }
 
@@ -117,4 +116,3 @@
 .inter {
   letter-spacing: -0.02em;
 }
-

@@ -4,51 +4,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Plus } from "lucide-react"
 import Link from "next/link"
+import { getPortfolios, formatCurrency, formatPercentage, Portfolio } from "@/lib/db/models/portfolio"
+import { requireAuth } from "@/lib/auth"
+import { executeQuery } from "@/lib/db"
 
-export default function PortfoliosPage() {
-  // Mock data - in a real app, this would come from the database
-  const portfolios = [
-    {
-      id: 1,
-      name: "Retirement Fund",
-      totalValue: "$125,000.00",
-      return: "+12.5%",
-      assetCount: 8,
-      lastUpdated: "2023-05-10",
-    },
-    {
-      id: 2,
-      name: "Education Fund",
-      totalValue: "$45,000.00",
-      return: "+8.2%",
-      assetCount: 5,
-      lastUpdated: "2023-05-09",
-    },
-    {
-      id: 3,
-      name: "Emergency Fund",
-      totalValue: "$15,000.00",
-      return: "+3.1%",
-      assetCount: 3,
-      lastUpdated: "2023-05-08",
-    },
-    {
-      id: 4,
-      name: "Growth Portfolio",
-      totalValue: "$78,000.00",
-      return: "+18.7%",
-      assetCount: 12,
-      lastUpdated: "2023-05-07",
-    },
-    {
-      id: 5,
-      name: "Income Portfolio",
-      totalValue: "$92,000.00",
-      return: "+6.4%",
-      assetCount: 7,
-      lastUpdated: "2023-05-06",
-    },
-  ]
+export default async function PortfoliosPage() {
+  // Get current user's session and account
+  const session = await requireAuth()
+  const accountQuery = "SELECT id FROM accounts WHERE id = $1"
+  const accountResult = await executeQuery(accountQuery, [session.id])
+  const accountId = accountResult[0]?.id
+
+  if (!accountId) {
+    throw new Error('Account not found')
+  }
+
+  // Fetch actual portfolio data from the database
+  const portfolios = await getPortfolios(accountId)
 
   return (
     <DashboardLayout>
@@ -81,13 +53,22 @@ export default function PortfoliosPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {portfolios.map((portfolio) => (
+                {portfolios.map((portfolio: Portfolio) => (
                   <TableRow key={portfolio.id}>
-                    <TableCell className="font-medium">{portfolio.name}</TableCell>
-                    <TableCell>{portfolio.totalValue}</TableCell>
-                    <TableCell className="text-green-600">{portfolio.return}</TableCell>
-                    <TableCell className="hidden md:table-cell">{portfolio.assetCount}</TableCell>
-                    <TableCell className="hidden md:table-cell">{portfolio.lastUpdated}</TableCell>
+                    <TableCell className="font-medium">
+                      {portfolio.name}
+                      {portfolio.description && (
+                        <p className="text-sm text-muted-foreground">{portfolio.description}</p>
+                      )}
+                    </TableCell>
+                    <TableCell>{formatCurrency(portfolio.total_value)}</TableCell>
+                    <TableCell className={portfolio.return_percentage >= 0 ? "text-green-600" : "text-red-600"}>
+                      {formatPercentage(portfolio.return_percentage)}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">{portfolio.asset_count}</TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {new Date(portfolio.last_updated).toLocaleDateString()}
+                    </TableCell>
                     <TableCell className="text-right">
                       <Link href={`/dashboard/portfolios/${portfolio.id}`}>
                         <Button variant="ghost" size="sm">
@@ -97,6 +78,13 @@ export default function PortfoliosPage() {
                     </TableCell>
                   </TableRow>
                 ))}
+                {portfolios.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground">
+                      No portfolios found. Create your first portfolio to get started.
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </CardContent>

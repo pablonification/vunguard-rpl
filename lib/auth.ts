@@ -44,7 +44,7 @@ export async function authenticateUser(username: string, password: string) {
     `
 
     const result = await executeQuery(query, [username])
-    console.log("Query result:", JSON.stringify(result, null, 2))
+    // console.log("Query result:", JSON.stringify(result, null, 2))
 
     // Check if we got any results
     if (!result || result.length === 0) {

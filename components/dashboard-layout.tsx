@@ -26,7 +26,14 @@ export async function DashboardLayout({ children, requiredRoles }: DashboardLayo
 
   // Pass the fetched session to the Client Component
   return (
-    <DashboardLayoutClient session={session} requiredRoles={requiredRoles}>
+    <DashboardLayoutClient 
+      session={{
+        username: session.username as string,
+        role: session.role as string,
+        avatarUrl: session.avatarUrl as string | undefined
+      }} 
+      requiredRoles={requiredRoles}
+    >
       {children}
     </DashboardLayoutClient>
   )

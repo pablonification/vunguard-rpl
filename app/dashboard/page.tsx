@@ -1,14 +1,36 @@
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { getSession } from "@/lib/auth"
-import { LineChart, PieChart } from "lucide-react"
+import { requireAuth } from "@/lib/auth"
+import { executeQuery } from "@/lib/db"
+import { formatCurrency, formatPercentage } from "@/lib/db/models/portfolio"
+import { 
+  getDashboardSummary, 
+  getPerformanceOverTime, 
+  getAssetAllocation, 
+  getRecentTransactions, 
+  getTopPerformingProducts 
+} from "@/lib/db/models/dashboard"
+import DashboardCharts from "./dashboard-charts"
 
 export default async function DashboardPage() {
-  const session = await getSession()
+  // Get current user
+  const session = await requireAuth()
+  const accountQuery = "SELECT id FROM accounts WHERE id = $1"
+  const accountResult = await executeQuery(accountQuery, [session.id])
+  const accountId = accountResult[0]?.id
 
-  if (!session) {
-    return null
+  if (!accountId) {
+    throw new Error('Account not found')
   }
+
+  // Fetch data for dashboard
+  const [summary, performanceData, assetAllocation, recentTransactions, topProducts] = await Promise.all([
+    getDashboardSummary(accountId),
+    getPerformanceOverTime(accountId),
+    getAssetAllocation(accountId),
+    getRecentTransactions(accountId),
+    getTopPerformingProducts(accountId)
+  ])
 
   return (
     <DashboardLayout>
@@ -36,13 +58,15 @@ export default async function DashboardPage() {
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">$45,231.89</div>
-              <p className="text-xs text-muted-foreground">+20.1% from last month</p>
+              <div className="text-2xl font-bold">{formatCurrency(summary.totalValue)}</div>
+              <p className="text-xs text-muted-foreground">
+                {summary.monthlyChange >= 0 ? "+" : ""}{formatPercentage(summary.monthlyChange)} from last month
+              </p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Return</CardTitle>
+              <CardTitle className="text-sm font-medium">Average Return</CardTitle>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -57,8 +81,8 @@ export default async function DashboardPage() {
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">+12.5%</div>
-              <p className="text-xs text-muted-foreground">+4.2% from last month</p>
+              <div className="text-2xl font-bold">{formatPercentage(summary.totalReturn)}</div>
+              <p className="text-xs text-muted-foreground">Across all portfolios</p>
             </CardContent>
           </Card>
           <Card>
@@ -79,13 +103,13 @@ export default async function DashboardPage() {
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">12</div>
-              <p className="text-xs text-muted-foreground">+2 since last month</p>
+              <div className="text-2xl font-bold">{summary.activeProducts}</div>
+              <p className="text-xs text-muted-foreground">Different investment products</p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Transactions</CardTitle>
+              <CardTitle className="text-sm font-medium">Recent Transactions</CardTitle>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -100,36 +124,17 @@ export default async function DashboardPage() {
               </svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">3</div>
-              <p className="text-xs text-muted-foreground">-2 since last month</p>
+              <div className="text-2xl font-bold">{summary.pendingTransactions}</div>
+              <p className="text-xs text-muted-foreground">In the last 30 days</p>
             </CardContent>
           </Card>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-          <Card className="col-span-4">
-            <CardHeader>
-              <CardTitle>Portfolio Performance</CardTitle>
-            </CardHeader>
-            <CardContent className="pl-2">
-              <div className="h-[300px] flex items-center justify-center">
-                <LineChart className="h-16 w-16 text-muted-foreground" />
-                <span className="ml-4 text-muted-foreground">Performance chart will be displayed here</span>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="col-span-3">
-            <CardHeader>
-              <CardTitle>Asset Allocation</CardTitle>
-            </CardHeader>
-            <CardContent className="pl-2">
-              <div className="h-[300px] flex items-center justify-center">
-                <PieChart className="h-16 w-16 text-muted-foreground" />
-                <span className="ml-4 text-muted-foreground">Asset allocation chart will be displayed here</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Charts section - using client component for the charts */}
+        <DashboardCharts 
+          performanceData={performanceData}
+          assetAllocation={assetAllocation}
+        />
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
           <Card className="col-span-4">
@@ -138,34 +143,23 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-8">
-                <div className="flex items-center">
+                {recentTransactions.length > 0 ? (
+                  recentTransactions.map(transaction => (
+                    <div key={transaction.id} className="flex items-center">
                   <div className="ml-4 space-y-1">
-                    <p className="text-sm font-medium leading-none">Purchase: Tech Growth Fund</p>
-                    <p className="text-sm text-muted-foreground">2023-05-10</p>
+                        <p className="text-sm font-medium leading-none">
+                          {transaction.transactionType.charAt(0).toUpperCase() + transaction.transactionType.slice(1)}: {transaction.productName}
+                        </p>
+                        <p className="text-sm text-muted-foreground">{transaction.date}</p>
                   </div>
-                  <div className="ml-auto font-medium">+$1,999.00</div>
+                      <div className={`ml-auto font-medium ${transaction.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {formatCurrency(Math.abs(transaction.amount))}
                 </div>
-                <div className="flex items-center">
-                  <div className="ml-4 space-y-1">
-                    <p className="text-sm font-medium leading-none">Sale: Global Bond Fund</p>
-                    <p className="text-sm text-muted-foreground">2023-05-08</p>
                   </div>
-                  <div className="ml-auto font-medium">-$3,500.00</div>
-                </div>
-                <div className="flex items-center">
-                  <div className="ml-4 space-y-1">
-                    <p className="text-sm font-medium leading-none">Purchase: Emerging Markets ETF</p>
-                    <p className="text-sm text-muted-foreground">2023-05-05</p>
-                  </div>
-                  <div className="ml-auto font-medium">+$2,750.00</div>
-                </div>
-                <div className="flex items-center">
-                  <div className="ml-4 space-y-1">
-                    <p className="text-sm font-medium leading-none">Dividend: Income Fund</p>
-                    <p className="text-sm text-muted-foreground">2023-05-01</p>
-                  </div>
-                  <div className="ml-auto font-medium">+$350.00</div>
-                </div>
+                  ))
+                ) : (
+                  <p className="text-muted-foreground text-center py-4">No recent transactions found</p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -175,34 +169,21 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-8">
-                <div className="flex items-center">
+                {topProducts.length > 0 ? (
+                  topProducts.map((product, index) => (
+                    <div key={index} className="flex items-center">
                   <div className="ml-4 space-y-1">
-                    <p className="text-sm font-medium leading-none">Tech Growth Fund</p>
-                    <p className="text-sm text-muted-foreground">High Risk</p>
+                        <p className="text-sm font-medium leading-none">{product.name}</p>
+                        <p className="text-sm text-muted-foreground">{product.riskLevel} Risk</p>
                   </div>
-                  <div className="ml-auto font-medium text-green-600">+24.5%</div>
+                      <div className="ml-auto font-medium text-green-600">
+                        {formatPercentage(product.returnPercentage)}
                 </div>
-                <div className="flex items-center">
-                  <div className="ml-4 space-y-1">
-                    <p className="text-sm font-medium leading-none">Healthcare Innovation Fund</p>
-                    <p className="text-sm text-muted-foreground">Medium Risk</p>
                   </div>
-                  <div className="ml-auto font-medium text-green-600">+18.2%</div>
-                </div>
-                <div className="flex items-center">
-                  <div className="ml-4 space-y-1">
-                    <p className="text-sm font-medium leading-none">Sustainable Energy ETF</p>
-                    <p className="text-sm text-muted-foreground">Medium Risk</p>
-                  </div>
-                  <div className="ml-auto font-medium text-green-600">+15.7%</div>
-                </div>
-                <div className="flex items-center">
-                  <div className="ml-4 space-y-1">
-                    <p className="text-sm font-medium leading-none">Global Leaders Index</p>
-                    <p className="text-sm text-muted-foreground">Low Risk</p>
-                  </div>
-                  <div className="ml-auto font-medium text-green-600">+12.3%</div>
-                </div>
+                  ))
+                ) : (
+                  <p className="text-muted-foreground text-center py-4">No products data available</p>
+                )}
               </div>
             </CardContent>
           </Card>

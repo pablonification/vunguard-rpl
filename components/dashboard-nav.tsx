@@ -117,14 +117,14 @@ export function DashboardNav({
       <div className="flex h-full flex-col justify-between">
         <nav className={cn("grid items-start gap-2 py-4", isExpanded || isMobile ? "px-3" : "px-2")}>
           {filteredNavItems.map((item, index) => renderTooltipWrapper(
-            <Link
-              href={item.href}
-              className={cn(
+        <Link
+          href={item.href}
+          className={cn(
                 "group flex items-center rounded-lg p-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
-                pathname === item.href ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground",
+                pathname === item.href ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-accent-foreground",
                 isExpanded || isMobile ? "justify-start" : "justify-center"
-              )}
-            >
+          )}
+        >
               {renderItemContent(item.icon, item.title)}
             </Link>,
             item.title,
@@ -155,7 +155,7 @@ export function DashboardNav({
                 rel={item.isExternal ? "noopener noreferrer" : undefined}
                 className={cn(
                   "group flex items-center rounded-lg p-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
-                  "text-muted-foreground hover:text-foreground",
+                  "text-muted-foreground hover:text-accent-foreground",
                   isExpanded || isMobile ? "justify-start" : "justify-center"
                 )}
               >
@@ -168,7 +168,7 @@ export function DashboardNav({
               <Button
                 variant="ghost"
                 className={cn(
-                  "group flex h-auto w-full items-center p-3 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-destructive-foreground",
+                  "group flex h-auto w-full items-center p-3 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-destructive",
                   isExpanded || isMobile ? "justify-start" : "justify-center"
                 )}
                 onClick={handleLogout}
@@ -178,7 +178,7 @@ export function DashboardNav({
               "Log out",
               "logout-button"
             )}
-          </nav>
+    </nav>
         </div>
       </div>
     </TooltipProvider>

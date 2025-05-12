@@ -4,51 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Plus } from "lucide-react"
 import Link from "next/link"
+import { getAccounts } from "@/lib/db/models/account"
+import { formatDate } from "@/lib/utils"
 
-export default function AccountsPage() {
-  // Mock data - in a real app, this would come from the database
-  const accounts = [
-    {
-      id: 1,
-      username: "john.doe",
-      fullName: "John Doe",
-      email: "john.doe@example.com",
-      role: "investor",
-      createdAt: "2023-01-15",
-    },
-    {
-      id: 2,
-      username: "jane.smith",
-      fullName: "Jane Smith",
-      email: "jane.smith@example.com",
-      role: "manager",
-      createdAt: "2023-02-20",
-    },
-    {
-      id: 3,
-      username: "robert.johnson",
-      fullName: "Robert Johnson",
-      email: "robert.johnson@example.com",
-      role: "analyst",
-      createdAt: "2023-03-10",
-    },
-    {
-      id: 4,
-      username: "sarah.williams",
-      fullName: "Sarah Williams",
-      email: "sarah.williams@example.com",
-      role: "investor",
-      createdAt: "2023-04-05",
-    },
-    {
-      id: 5,
-      username: "admin.user",
-      fullName: "Admin User",
-      email: "admin@example.com",
-      role: "admin",
-      createdAt: "2023-01-01",
-    },
-  ]
+export default async function AccountsPage() {
+  const accounts = await getAccounts()
 
   return (
     <DashboardLayout requiredRoles={["admin"]}>
@@ -87,11 +47,15 @@ export default function AccountsPage() {
                     <TableCell>{account.fullName}</TableCell>
                     <TableCell className="hidden md:table-cell">{account.email}</TableCell>
                     <TableCell>
-                      <span className="capitalize">{account.role}</span>
+                      <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium capitalize text-primary ring-1 ring-inset ring-primary/20">
+                        {account.role}
+                      </span>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">{account.createdAt}</TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {formatDate(account.createdAt)}
+                    </TableCell>
                     <TableCell className="text-right">
-                      <Link href={`/dashboard/accounts/${account.id}`}>
+                      <Link href={`/dashboard/accounts/${account.id}/edit`}>
                         <Button variant="ghost" size="sm">
                           Edit
                         </Button>

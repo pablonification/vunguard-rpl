@@ -6,6 +6,7 @@ import Link from "next/link"; // Link might be used here for internal nav if any
 import Image from "next/image";
 import { redirect } from "next/navigation"; // For client-side redirects if needed, though session checks are better in parent server component
 import { useRouter } from "next/navigation"; // Import useRouter for navigation
+import { useTheme } from "next-themes";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +30,7 @@ import {
   PlusCircle
 } from "lucide-react";
 import { logout } from "@/lib/auth"; // Import logout
-import { ThemeToggle } from "@/components/theme-toggle"
+import { ThemeToggle } from "@/components/theme-toggle";
 
 // This is the DashboardLayoutClient component moved from dashboard-layout.tsx
 export function DashboardLayoutClient({ 
@@ -43,6 +44,7 @@ export function DashboardLayoutClient({
 }) {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const router = useRouter(); // Initialize useRouter
+  const { theme } = useTheme();
 
   // Client-side session checks might be redundant if parent server component handles it
   // but good for robustness if this component could be rendered standalone in future.
@@ -92,7 +94,7 @@ export function DashboardLayoutClient({
         >
           {/* Collapsed Logo (e.g., "W" icon) */}
           <Image
-            src="/logo_short.png" // Your short/icon logo
+            src={theme === 'dark' ? "/logo_short_white.png" : "/logo_short.png"}
             alt="W Logo"
             fill
             sizes={!isSidebarExpanded ? "32px" : "0px"} // Approx size when visible
@@ -104,7 +106,7 @@ export function DashboardLayoutClient({
 
           {/* Expanded Logo (e.g., full company logo) */}
           <Image
-            src="/logo.png" // Your full logo
+            src={theme === 'dark' ? "/logo_white.png" : "/logo.png"}
             alt="Company Logo"
             fill
             sizes={isSidebarExpanded ? "140px" : "0px"} // Approx size when visible
