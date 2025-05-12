@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 import Link from "next/link"
 import { usePathname, redirect } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -102,7 +102,7 @@ export function DashboardNav({
   // Helper to wrap with Tooltip if needed
   const renderTooltipWrapper = (content: React.ReactNode, title: string, key: string) => {
     if (isExpanded || isMobile) {
-      return content;
+      return React.cloneElement(content as React.ReactElement, { key });
     }
     return (
       <Tooltip key={key}>
@@ -117,14 +117,14 @@ export function DashboardNav({
       <div className="flex h-full flex-col justify-between">
         <nav className={cn("grid items-start gap-2 py-4", isExpanded || isMobile ? "px-3" : "px-2")}>
           {filteredNavItems.map((item, index) => renderTooltipWrapper(
-        <Link
-          href={item.href}
-          className={cn(
+            <Link
+              href={item.href}
+              className={cn(
                 "group flex items-center rounded-lg p-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
                 pathname === item.href ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-accent-foreground",
                 isExpanded || isMobile ? "justify-start" : "justify-center"
-          )}
-        >
+              )}
+            >
               {renderItemContent(item.icon, item.title)}
             </Link>,
             item.title,
@@ -178,7 +178,7 @@ export function DashboardNav({
               "Log out",
               "logout-button"
             )}
-    </nav>
+          </nav>
         </div>
       </div>
     </TooltipProvider>

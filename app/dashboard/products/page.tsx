@@ -4,62 +4,32 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Plus } from "lucide-react"
 import Link from "next/link"
+import { getProducts } from "@/lib/db/models/product"
+import { requireAuth } from "@/lib/auth"
 
-export default function ProductsPage() {
-  // Mock data - in a real app, this would come from the database
-  const products = [
-    {
-      id: 1,
-      code: "TGF001",
-      name: "Tech Growth Fund",
-      description: "A fund focused on high-growth technology companies",
-      strategy: "Growth",
-      riskLevel: "High",
-    },
-    {
-      id: 2,
-      code: "GBF002",
-      name: "Global Bond Fund",
-      description: "A diversified portfolio of government and corporate bonds",
-      strategy: "Income",
-      riskLevel: "Low",
-    },
-    {
-      id: 3,
-      code: "EME003",
-      name: "Emerging Markets ETF",
-      description: "Exposure to high-growth emerging market economies",
-      strategy: "Growth",
-      riskLevel: "High",
-    },
-    {
-      id: 4,
-      code: "INC004",
-      name: "Income Fund",
-      description: "Focus on dividend-paying stocks and fixed income",
-      strategy: "Income",
-      riskLevel: "Medium",
-    },
-    {
-      id: 5,
-      code: "HIF005",
-      name: "Healthcare Innovation Fund",
-      description: "Investing in breakthrough healthcare technologies",
-      strategy: "Growth",
-      riskLevel: "Medium",
-    },
-  ]
+export default async function ProductsPage() {
+  // Get current user and verify authorization
+  const session = await requireAuth()
+  if (!["manager", "analyst", "admin"].includes(session.role)) {
+    throw new Error("Unauthorized")
+  }
+
+  // Fetch products from database
+  const products = await getProducts()
 
   return (
-    <DashboardLayout requiredRoles={["manager", "analyst", "admin"]}>
+    <DashboardLayout>
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold tracking-tight">Products</h1>
-          <Link href="/dashboard/products/new">
-            <Button>
-              <Plus className="mr-2 h-4 w-4" /> Add Product
-            </Button>
-          </Link>
+          {/* Only show Add Product button for managers and admins */}
+          {(session.role === "manager" || session.role === "admin") && (
+            <Link href="/dashboard/products/new">
+              <Button>
+                <Plus className="mr-2 h-4 w-4" /> Add Product
+              </Button>
+            </Link>
+          )}
         </div>
         <p className="text-muted-foreground">Manage your investment products and their details.</p>
 
@@ -86,8 +56,8 @@ export default function ProductsPage() {
                     <TableCell className="font-medium">{product.code}</TableCell>
                     <TableCell>{product.name}</TableCell>
                     <TableCell className="hidden md:table-cell">{product.description}</TableCell>
-                    <TableCell>{product.strategy}</TableCell>
-                    <TableCell>{product.riskLevel}</TableCell>
+                    <TableCell>{product.investment_strategy}</TableCell>
+                    <TableCell>{product.risk_level}</TableCell>
                     <TableCell className="text-right">
                       <Link href={`/dashboard/products/${product.id}`}>
                         <Button variant="ghost" size="sm">
@@ -97,6 +67,13 @@ export default function ProductsPage() {
                     </TableCell>
                   </TableRow>
                 ))}
+                {products.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground">
+                      No products found.
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </CardContent>

@@ -84,37 +84,47 @@ export function DashboardLayoutClient({
         <Link
           href="/dashboard"
           className={cn(
-            "mb-8 relative flex items-center justify-center", // Parent for absolute positioning of images
-            "transition-all duration-300 ease-in-out", // Smooth transition for size and background
+            "mb-8 relative flex items-center justify-center overflow-hidden", // Added overflow-hidden
+            "transition-all duration-300 ease-in-out",
             isSidebarExpanded
-              ? "w-full max-w-[140px] h-[40px]" // Size for expanded logo (e.g., full logo text)
-              : "w-10 h-10 rounded-lg" // Size and style for collapsed icon logo
+              ? "w-[140px] h-[40px]" // Adjusted size for expanded state
+              : "w-[40px] h-[40px]" // Fixed size for collapsed state
           )}
           aria-label="Dashboard home"
         >
-          {/* Collapsed Logo (e.g., "W" icon) */}
-          <Image
-            src={theme === 'dark' ? "/logo_short_white.png" : "/logo_short.png"}
-            alt="W Logo"
-            fill
-            sizes={!isSidebarExpanded ? "32px" : "0px"} // Approx size when visible
+          {/* Collapsed Logo */}
+          <div 
             className={cn(
-              "object-contain transition-opacity duration-300 ease-in-out p-1.5", // p-1.5 for padding within the 40x40 box
-              isSidebarExpanded ? "opacity-0" : "opacity-100"
+              "absolute inset-0 flex items-center justify-center",
+              "transition-transform duration-300 ease-in-out",
+              isSidebarExpanded ? "-translate-x-full opacity-0" : "translate-x-0 opacity-100"
             )}
-          />
+          >
+            <Image
+              src={theme === 'dark' ? "/logo_short_white.png" : "/logo_short.png"}
+              alt="Logo Icon"
+              width={32}
+              height={32}
+              className="object-contain"
+            />
+          </div>
 
-          {/* Expanded Logo (e.g., full company logo) */}
-          <Image
-            src={theme === 'dark' ? "/logo_white.png" : "/logo.png"}
-            alt="Company Logo"
-            fill
-            sizes={isSidebarExpanded ? "140px" : "0px"} // Approx size when visible
+          {/* Expanded Logo */}
+          <div 
             className={cn(
-              "object-contain transition-opacity duration-300 ease-in-out",
-              isSidebarExpanded ? "opacity-100" : "opacity-0"
+              "absolute inset-0 flex items-center justify-center",
+              "transition-transform duration-300 ease-in-out",
+              isSidebarExpanded ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
             )}
-          />
+          >
+            <Image
+              src={theme === 'dark' ? "/logo_white.png" : "/logo.png"}
+              alt="Company Logo"
+              width={140}
+              height={40}
+              className="object-contain"
+            />
+          </div>
         </Link>
         <DashboardNav 
           role={session.role as string} 
