@@ -14,12 +14,43 @@ import DashboardCharts from "./dashboard-charts"
 import { TopUpDialog } from "./topup-dialog"
 import { Button } from "@/components/ui/button"
 import { Coins } from "lucide-react"
+import InvestorSelect from "./investor-select"
 
-export default async function DashboardPage() {
+interface SearchParams {
+  investorId?: string;
+}
+
+export default async function DashboardPage({ searchParams }: { searchParams: SearchParams }) {
   // Get current user
   const session = await requireAuth()
+  
+  // Determine if user is authorized to select investors (manager, admin, or analyst)
+  const canSelectInvestor = ['manager', 'admin', 'analyst'].includes(session.role as string);
+  
+  // Determine which account to show data for
+  let targetAccountId: number;
+  
+  if (canSelectInvestor && searchParams.investorId) {
+    // If authorized role and investorId is provided in URL, use that
+    targetAccountId = parseInt(searchParams.investorId, 10);
+    if (isNaN(targetAccountId)) {
+      console.error("Invalid investorId in URL:", searchParams.investorId);
+      // Fall back to the session's own ID
+      targetAccountId = typeof session.id === 'string' ? parseInt(session.id, 10) : Number(session.id || 0);
+    }
+  } else {
+    // Otherwise use session ID (for regular users or if no selection)
+    targetAccountId = typeof session.id === 'string' ? parseInt(session.id, 10) : Number(session.id || 0);
+  }
+  
+  if (isNaN(targetAccountId)) {
+    console.error("Invalid targetAccountId after parsing:", targetAccountId);
+    throw new Error('Invalid account ID');
+  }
+
+  // Get account details
   const accountQuery = "SELECT id, full_name FROM accounts WHERE id = $1"
-  const accountResult = await executeQuery(accountQuery, [session.id])
+  const accountResult = await executeQuery(accountQuery, [targetAccountId])
   const accountId = accountResult[0]?.id
   const accountFullName = accountResult[0]?.full_name
 
@@ -40,13 +71,20 @@ export default async function DashboardPage() {
     <DashboardLayout>
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           {session.role === 'investor' && (
             <TopUpDialog accountId={accountId} />
           )}
         </div>
+        
+        {/* Show investor selection for managers and analysts */}
+        {canSelectInvestor && <InvestorSelect currentInvestorId={targetAccountId} />}
+        
         <p className="text-muted-foreground">
-          Welcome back, {accountFullName || session.username}! Here's an overview of your investment assets.
+          {canSelectInvestor && targetAccountId !== session.id ? 
+            `Viewing dashboard for ${accountFullName || 'investor'}` : 
+            `Welcome back, ${accountFullName || session.username}! Here's an overview of your investment assets.`
+          }
         </p>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

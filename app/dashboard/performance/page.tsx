@@ -4,9 +4,11 @@ import { getPortfolioPerformances, getAssetAllocations, getPerformanceOverTime, 
 import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import type { PortfolioPerformance, AssetAllocation, PerformanceOverTime } from "@/lib/db/models/performance";
+import InvestorSelect from "./investor-select";
 
 interface Session {
   id: string | number;
+  role?: string;
   // Add other session properties as needed
 }
 
@@ -64,68 +66,56 @@ const generateMockRiskAllocation = (assetAllocations: Array<{name: string; value
 */
 // --- END MOCK DATA GENERATION ---
 
-
-export default async function PerformancePage() {
+export default async function PerformancePage({ searchParams }: { searchParams: { investorId?: string } }) {
   const session = await getSession() as Session | null;
-  // console.log('Session:', session); // Keep for debugging if needed
   
   if (!session || !session.id) { // Ensure session.id exists
     redirect("/login");
     return; // Add return to stop execution after redirect
   }
 
-  // Ensure session.id is a number for database queries
-  const accountId = typeof session.id === 'string' ? parseInt(session.id, 10) : session.id;
-  if (isNaN(accountId)) {
-    console.error("Invalid accountId after parsing session.id:", session.id);
-    // Handle error appropriately, maybe redirect or show an error message
-    redirect("/login"); // Or an error page
+  // Determine if user is authorized to select investors (manager, admin, or analyst)
+  const canSelectInvestor = ['manager', 'admin', 'analyst'].includes(session.role as string);
+  
+  // Determine which account to show data for
+  let targetAccountId: number;
+  
+  if (canSelectInvestor && searchParams.investorId) {
+    // If authorized role and investorId is provided in URL, use that
+    targetAccountId = parseInt(searchParams.investorId, 10);
+    if (isNaN(targetAccountId)) {
+      console.error("Invalid investorId in URL:", searchParams.investorId);
+      // Fall back to the session's own ID
+      targetAccountId = typeof session.id === 'string' ? parseInt(session.id, 10) : session.id;
+    }
+  } else {
+    // Otherwise use session ID (for regular users or if no selection)
+    targetAccountId = typeof session.id === 'string' ? parseInt(session.id, 10) : session.id;
+  }
+  
+  if (isNaN(targetAccountId)) {
+    console.error("Invalid targetAccountId after parsing:", targetAccountId);
+    redirect("/login");
     return;
   }
-  // console.log('Account ID:', accountId); // Keep for debugging if needed
-
+  
   // Fetch all required data from the database
-  /* 
-  // Commented out mock data assignment
-  const mockPortfolioPerformancesRaw = generateMockPortfolioPerformance();
-  const mockAssetAllocationsRaw = generateMockAssetAllocation();
-  const mockPerformanceOverTimeRaw = generateMockPerformanceOverTime();
-  const mockRiskAllocationRaw = generateMockRiskAllocation(mockAssetAllocationsRaw);
-
-  const [
-    portfolioPerformances,
-    assetAllocations,
-    performanceOverTime,
-    riskAllocation
-  ] = [
-    mockPortfolioPerformancesRaw,
-    mockAssetAllocationsRaw,
-    mockPerformanceOverTimeRaw,
-    mockRiskAllocationRaw
-  ];
-  */
-
   const [
     dbPortfolioPerformances,
     dbAssetAllocations,
     dbPerformanceOverTime,
     dbRiskAllocation
   ] = await Promise.all([
-    getPortfolioPerformances(accountId),
-    getAssetAllocations(accountId),
-    getPerformanceOverTime(accountId),
-    getRiskAllocation(accountId) // This function should derive risk from asset allocations for accountId
+    getPortfolioPerformances(targetAccountId),
+    getAssetAllocations(targetAccountId),
+    getPerformanceOverTime(targetAccountId),
+    getRiskAllocation(targetAccountId)
   ]) as [
     PortfolioPerformance[],
     AssetAllocation[],
-    PerformanceOverTime[], // Assuming this returns date as Date object or ISO string
+    PerformanceOverTime[],
     { name: string; value: number; }[]
   ];
-
-  // console.log('DB Portfolio Performances:', dbPortfolioPerformances);
-  // console.log('DB Asset Allocations:', dbAssetAllocations);
-  // console.log('DB Performance Over Time:', dbPerformanceOverTime);
-  // console.log('DB Risk Allocation:', dbRiskAllocation);
 
   // Format portfolio performance data for the table
   const portfolioPerformanceTableData = dbPortfolioPerformances.map(portfolio => {
@@ -159,16 +149,14 @@ export default async function PerformancePage() {
     };
   });
 
-  // console.log('Formatted Table Data (from DB):', portfolioPerformanceTableData);
-  // console.log('Formatted Chart Data (Performance Over Time from DB):', formattedPerformanceOverTimeData);
-
   return (
     <DashboardLayout>
+      {canSelectInvestor && <InvestorSelect currentInvestorId={targetAccountId} />}
       <PerformanceClientContent 
         portfolioPerformanceTableData={portfolioPerformanceTableData}
-        performanceOverTimeData={formattedPerformanceOverTimeData} // Use formatted data
-        assetAllocationData={dbAssetAllocations} // Pass dbAssetAllocations directly
-        riskAllocationData={dbRiskAllocation} // Pass dbRiskAllocation directly
+        performanceOverTimeData={formattedPerformanceOverTimeData}
+        assetAllocationData={dbAssetAllocations}
+        riskAllocationData={dbRiskAllocation}
       />
     </DashboardLayout>
   );
