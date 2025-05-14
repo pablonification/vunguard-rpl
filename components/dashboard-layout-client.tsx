@@ -168,30 +168,30 @@ export function DashboardLayoutClient({
             {/* Right section: Search, Actions, User */}
             <div className="flex flex-1 items-center justify-end space-x-3 sm:space-x-4">
               <div className="relative hidden md:block">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                {/* <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                   <Search className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
-                </div>
-                <Input
+                </div> */}
+                {/* <Input
                   type="search"
                   name="search"
                   id="search"
                   className="pl-10 pr-3"
                   placeholder="Search"
-                />
+                /> */}
               </div>
 
-              <Button className="whitespace-nowrap" variant="gradient">
+              {/* <Button className="whitespace-nowrap" variant="gradient">
                 <PlusCircle className="mr-2 h-5 w-5 flex-shrink-0" />
                 Add Invoices
-              </Button>
+              </Button> */}
 
-              <button
+              {/* <button
                 type="button"
                 className="rounded-full bg-background/50 p-1 text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 aria-label="View messages"
               >
                 <Mail className="h-6 w-6" aria-hidden="true" />
-              </button>
+              </button> */}
 
               <NotificationBell userId={session.id} />
 
