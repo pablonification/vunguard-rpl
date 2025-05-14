@@ -20,11 +20,11 @@ export default async function AccountsPage() {
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold tracking-tight">Accounts</h1>
-          <Link href="/dashboard/accounts/new">
+          {/* <Link href="/dashboard/accounts/new">
             <Button>
               <Plus className="mr-2 h-4 w-4" /> Add Account
             </Button>
-          </Link>
+          </Link> */}
         </div>
         <p className="text-muted-foreground">Manage user accounts and their access permissions.</p>
 
