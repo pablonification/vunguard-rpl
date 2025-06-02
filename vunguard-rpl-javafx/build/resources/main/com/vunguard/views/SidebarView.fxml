@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Text?>
+
+<VBox fx:id="sidebarPane" alignment="TOP_CENTER" spacing="10.0" style="-fx-background-color: #12121A; -fx-padding: 20;" prefWidth="250.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/21" fx:controller="com.vunguard.controllers.SidebarController">
+    <children>
+        <ImageView fitHeight="40.0" fitWidth="150.0" pickOnBounds="true" preserveRatio="true" VBox.vgrow="NEVER">
+            <image>
+                <Image url="@../assets/logo_white.png" />
+            </image>
+            <VBox.margin>
+                <Insets bottom="30.0" />
+            </VBox.margin>
+        </ImageView>
+
+        <Button fx:id="dashboardButton" onAction="#handleDashboardAction" text="Dashboard" styleClass="sidebar-button" style="-fx-font-family: 'Inter 18pt'; -fx-text-fill: white; -fx-background-color: #1E1E2C; -fx-pref-width: 200; -fx-alignment: baseline-left; -fx-padding: 10 15;"/>
+        <Button fx:id="portfoliosButton" onAction="#handlePortfoliosAction" text="Portfolios" styleClass="sidebar-button" style="-fx-font-family: 'Inter 18pt'; -fx-text-fill: #A0A0A0; -fx-background-color: transparent; -fx-pref-width: 200; -fx-alignment: baseline-left; -fx-padding: 10 15;"/>
+        <Button fx:id="transactionsButton" onAction="#handleTransactionsAction" text="Transactions" styleClass="sidebar-button" style="-fx-font-family: 'Inter 18pt'; -fx-text-fill: #A0A0A0; -fx-background-color: transparent; -fx-pref-width: 200; -fx-alignment: baseline-left; -fx-padding: 10 15;"/>
+        <Button fx:id="performanceButton" onAction="#handlePerformanceAction" text="Performance" styleClass="sidebar-button" style="-fx-font-family: 'Inter 18pt'; -fx-text-fill: #A0A0A0; -fx-background-color: transparent; -fx-pref-width: 200; -fx-alignment: baseline-left; -fx-padding: 10 15;"/>
+        <Button fx:id="accountsButton" onAction="#handleAccountsAction" text="Accounts" styleClass="sidebar-button" style="-fx-font-family: 'Inter 18pt'; -fx-text-fill: #A0A0A0; -fx-background-color: transparent; -fx-pref-width: 200; -fx-alignment: baseline-left; -fx-padding: 10 15;"/>
+
+        <VBox VBox.vgrow="ALWAYS" /> <!-- Spacer -->
+
+        <Button fx:id="collapseButton" onAction="#handleCollapseAction" text="Collapse" styleClass="sidebar-button-bottom" style="-fx-font-family: 'Inter 18pt'; -fx-text-fill: #A0A0A0; -fx-background-color: transparent; -fx-pref-width: 200; -fx-alignment: baseline-left; -fx-padding: 10 15;"/>
+        <Button fx:id="supportButton" onAction="#handleSupportAction" text="Support" styleClass="sidebar-button-bottom" style="-fx-font-family: 'Inter 18pt'; -fx-text-fill: #A0A0A0; -fx-background-color: transparent; -fx-pref-width: 200; -fx-alignment: baseline-left; -fx-padding: 10 15;"/>
+        <Button fx:id="logoutButton" onAction="#handleLogoutAction" text="Log out" styleClass="sidebar-button-bottom" style="-fx-font-family: 'Inter 18pt'; -fx-text-fill: #A0A0A0; -fx-background-color: transparent; -fx-pref-width: 200; -fx-alignment: baseline-left; -fx-padding: 10 15;"/>
+    </children>
+</VBox> 

@@ -1,0 +1,149 @@
+/* General application styling */
+.root {
+    -fx-font-family: "Segoe UI", sans-serif;
+    -fx-background-color: #12121A;
+}
+
+/* Sidebar navigation styling */
+.sidebar {
+    -fx-background-color: #12121A;
+    -fx-padding: 20px 10px;
+}
+
+.sidebar-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #A0A0A0;
+    -fx-font-size: 14px;
+    -fx-padding: 10px 15px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-alignment: center-left;
+    -fx-min-width: 200px;
+}
+
+.sidebar-button:hover {
+    -fx-background-color: #2A2A3A;
+    -fx-text-fill: white;
+}
+
+.sidebar-button.active {
+    -fx-background-color: #0A84FF;
+    -fx-text-fill: white;
+}
+
+/* Form control styling */
+.text-field, .password-field {
+    -fx-background-color: #2A2A3A;
+    -fx-text-fill: white;
+    -fx-prompt-text-fill: #A0A0A0;
+    -fx-padding: 10px;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+}
+
+.button {
+    -fx-background-color: #0A84FF;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 10px;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+}
+
+.button:hover {
+    -fx-background-color: #0071E3;
+}
+
+/* ScrollPane styling */
+.dashboard-scroll-pane {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+
+.dashboard-scroll-pane > .viewport {
+    -fx-background-color: #1E1E2C;
+}
+
+.dashboard-scroll-pane > .scroll-bar:vertical {
+    -fx-background-color: #1E1E2C;
+    -fx-opacity: 0.7;
+}
+
+.dashboard-scroll-pane > .scroll-bar:vertical > .thumb {
+    -fx-background-color: #3A3A4A;
+    -fx-background-radius: 5px;
+}
+
+.dashboard-scroll-pane > .scroll-bar:vertical > .thumb:hover {
+    -fx-background-color: #4A4A5A;
+}
+
+.dashboard-scroll-pane > .scroll-bar:vertical > .increment-button, 
+.dashboard-scroll-pane > .scroll-bar:vertical > .decrement-button {
+    -fx-background-color: transparent;
+}
+
+/* Hide horizontal scrollbar */
+.dashboard-scroll-pane > .scroll-bar:horizontal {
+    -fx-opacity: 0;
+    -fx-padding: 0;
+    -fx-pref-height: 0;
+}
+
+/* TableView styling */
+.table-view {
+    -fx-background-color: #2A2A3A;
+    -fx-table-cell-border-color: transparent;
+    -fx-text-fill: white;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: #1E1E2C;
+    -fx-padding: 5;
+}
+
+.table-view .column-header {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-border-color: transparent;
+}
+
+.table-view .column-header .label {
+    -fx-text-fill: #A0A0A0;
+    -fx-font-weight: bold;
+    -fx-alignment: center-left;
+}
+
+.table-view .table-cell {
+    -fx-text-fill: white;
+    -fx-alignment: center-left;
+    -fx-padding: 10 5;
+}
+
+.table-view .table-row-cell {
+    -fx-background-color: #2A2A3A;
+    -fx-border-color: transparent;
+}
+
+.table-view .table-row-cell:odd {
+    -fx-background-color: #353545;
+}
+
+.table-view .table-row-cell:selected {
+    -fx-background-color: #3A3A4A;
+    -fx-text-fill: white;
+}
+
+/* Create Portfolio button styling */
+.create-button {
+    -fx-background-color: #4ADE80;
+    -fx-text-fill: #0F172A;
+    -fx-font-weight: bold;
+    -fx-background-radius: 20;
+    -fx-padding: 8 15;
+}
+
+.create-button:hover {
+    -fx-background-color: #22C55E;
+} 

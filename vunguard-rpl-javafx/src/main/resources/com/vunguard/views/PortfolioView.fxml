@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.geometry.Insets?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/21" 
+            fx:controller="com.vunguard.controllers.PortfolioController"
+            prefHeight="768.0" prefWidth="1366.0" style="-fx-background-color: #12121A;">
+    <left>
+        <fx:include fx:id="sidebarView" source="SidebarView.fxml" />
+    </left>
+    <center>
+        <ScrollPane fitToWidth="true" styleClass="dashboard-scroll-pane" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED">
+            <content>
+                <VBox fx:id="contentArea" alignment="TOP_LEFT" spacing="20.0" style="-fx-background-color: #1E1E2C; -fx-padding: 30;">
+                    <children>
+                        <!-- Main Header and Create Button -->
+                        <HBox alignment="CENTER_LEFT">
+                            <children>
+                                <Label text="Portfolios" style="-fx-font-size: 28px; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                                <Region HBox.hgrow="ALWAYS" />
+                                <Button fx:id="createPortfolioButton" text="Create Portfolio" 
+                                        style="-fx-background-color: #4ADE80; -fx-text-fill: #0F172A; -fx-font-weight: bold; -fx-background-radius: 20;">
+                                    <graphic>
+                                        <Label text="+" style="-fx-text-fill: #0F172A; -fx-font-weight: bold; -fx-font-size: 16px;"/>
+                                    </graphic>
+                                    <padding>
+                                        <Insets left="15" right="15" top="8" bottom="8" />
+                                    </padding>
+                                </Button>
+                            </children>
+                        </HBox>
+                        
+                        <!-- Description -->
+                        <Label text="Manage your investment portfolios and track their performance." 
+                               style="-fx-text-fill: #A0A0A0; -fx-font-size: 14px;"/>
+                        
+                        <!-- Your Portfolios Section -->
+                        <VBox spacing="10.0" style="-fx-padding: 20 0 0 0;">
+                            <children>
+                                <Label text="Your Portfolios" style="-fx-font-size: 20px; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                                <Label text="Manage and monitor your investment portfolios."
+                                       style="-fx-text-fill: #A0A0A0; -fx-font-size: 14px;"/>
+                                
+                                <!-- Table Section -->
+                                <TableView fx:id="portfolioTable" style="-fx-background-color: #2A2A3A; -fx-text-fill: white; -fx-padding: 10;" VBox.vgrow="ALWAYS">
+                                    <columns>
+                                        <TableColumn fx:id="nameColumn" text="Name" prefWidth="150.0" />
+                                        <TableColumn fx:id="assetValueColumn" text="Asset Value" prefWidth="120.0" />
+                                        <TableColumn fx:id="cashBalanceColumn" text="Cash Balance" prefWidth="120.0" />
+                                        <TableColumn fx:id="totalValueColumn" text="Total Value" prefWidth="120.0" />
+                                        <TableColumn fx:id="returnColumn" text="Return" prefWidth="100.0" />
+                                        <TableColumn fx:id="assetsColumn" text="Assets" prefWidth="100.0" />
+                                        <TableColumn fx:id="lastUpdatedColumn" text="Last Updated" prefWidth="150.0" />
+                                        <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="150.0" minWidth="150.0" />
+                                    </columns>
+                                    <placeholder>
+                                        <Label text="No portfolios found. Create your first portfolio to get started." style="-fx-text-fill: #A0A0A0;" />
+                                    </placeholder>
+                                </TableView>
+                            </children>
+                        </VBox>
+                    </children>
+                </VBox>
+            </content>
+        </ScrollPane>
+    </center>
+</BorderPane> 
