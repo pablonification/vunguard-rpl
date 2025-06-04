@@ -79,6 +79,11 @@ public class SidebarController {
     private void handlePerformanceAction(ActionEvent event) {
         System.out.println("Performance button clicked");
         setActiveButton(performanceButton);
+        try {
+            Main.loadPerformanceScene();
+        } catch (IOException e) {
+            System.err.println("Error loading Performance scene: " + e.getMessage());
+        }
     }
 
     @FXML

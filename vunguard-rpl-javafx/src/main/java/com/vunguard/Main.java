@@ -114,6 +114,7 @@ public class Main extends Application {
             primaryStageRef.setTitle("Vanguard Asset Management - Accounts");
         }
     }
+
     public static void loadRegistrationScene() throws IOException {
         if (primaryStageRef != null) {
             Parent root = FXMLLoader.load(Main.class.getResource("views/RegistrationView.fxml"));
@@ -125,6 +126,20 @@ public class Main extends Application {
         
             primaryStageRef.setScene(scene);
             primaryStageRef.setTitle("Vanguard Asset Management - Registration");
+        }
+    }
+
+    public static void loadPerformanceScene() throws IOException {
+        if (primaryStageRef != null) {
+            Parent root = FXMLLoader.load(Main.class.getResource("views/PerformanceView.fxml"));
+            Scene scene = new Scene(root, 1280, 720);
+            
+            // Load CSS
+            String css = Main.class.getResource("styles/application.css").toExternalForm();
+            scene.getStylesheets().add(css);
+            
+            primaryStageRef.setScene(scene);
+            primaryStageRef.setTitle("Vanguard Asset Management - Performance");
         }
     }
 } 
