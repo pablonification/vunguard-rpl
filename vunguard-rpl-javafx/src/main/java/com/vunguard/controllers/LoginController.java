@@ -1,5 +1,11 @@
 package com.vunguard.controllers;
 
+import java.io.IOException;
+import java.util.List;
+
+import com.vunguard.Main;
+import com.vunguard.models.User;
+
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -49,9 +55,27 @@ public class LoginController {
         // TODO: Implementasikan logika autentikasi di sini
         // Misalnya, validasi input, panggil service autentikasi, dll.
 
+        List<User> registeredUsers = RegistrationController.getRegisteredUsers();
+        
+        // Check if any user matches the credentials
+        // Note: In a real application, passwords should be hashed and compared securely
+        for (User user : registeredUsers) {
+            if (user.getUsername().equals(username)) {
+            try {
+                Main.loadDashboardScene();
+            } catch (IOException e) {
+                System.err.println("Error loading Dashboard scene: " + e.getMessage());
+            }
+            }
+        } 
+
         if (username.equals("admin") && password.equals("password")) {
             System.out.println("Login successful (dummy)");
-            // TODO: Navigasi ke halaman berikutnya setelah login berhasil
+            try {
+                Main.loadDashboardScene();
+            } catch (IOException e) {
+                System.err.println("Error loading Dashboard scene: " + e.getMessage());
+            }
         } else {
             System.out.println("Login failed (dummy)");
             // TODO: Tampilkan pesan error di UI
@@ -67,6 +91,10 @@ public class LoginController {
     @FXML
     private void handleRegisterAction(ActionEvent event) {
         System.out.println("Register link clicked");
-        // TODO: Implementasikan logika untuk navigasi ke halaman registrasi
+        try {
+            Main.loadRegistrationScene();
+    } catch (IOException e) {
+        System.err.println("Error loading Registration scene: " + e.getMessage());
     }
+}
 } 

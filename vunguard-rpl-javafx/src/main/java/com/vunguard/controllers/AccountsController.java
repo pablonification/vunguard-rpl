@@ -1,6 +1,7 @@
 package com.vunguard.controllers;
 
 import com.vunguard.models.User;
+import com.vunguard.controllers.RegistrationController;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -74,6 +75,7 @@ public class AccountsController {
     }
 
     private void addSampleUsers() {
+        userList.addAll(RegistrationController.getRegisteredUsers());
         // Sample data matching the screenshot
         userList.addAll(Arrays.asList(
             new User("arqilasp_investor", "Arqila Surya Putra", "investor@gmail.com", "Investor", LocalDate.of(2025, 5, 12)),

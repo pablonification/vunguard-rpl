@@ -114,4 +114,17 @@ public class Main extends Application {
             primaryStageRef.setTitle("Vanguard Asset Management - Accounts");
         }
     }
+    public static void loadRegistrationScene() throws IOException {
+        if (primaryStageRef != null) {
+            Parent root = FXMLLoader.load(Main.class.getResource("views/RegistrationView.fxml"));
+            Scene scene = new Scene(root, 800, 600);
+        
+            // Load CSS
+            String css = Main.class.getResource("styles/application.css").toExternalForm();
+            scene.getStylesheets().add(css);
+        
+            primaryStageRef.setScene(scene);
+            primaryStageRef.setTitle("Vanguard Asset Management - Registration");
+        }
+    }
 } 
