@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.Region?>
+
+<ScrollPane fx:id="scrollPane" fitToWidth="true" fitToHeight="true" 
+           style="-fx-background: #1E1E2C; -fx-background-color: #1E1E2C;" 
+           hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
+           prefWidth="500.0" prefHeight="600.0"
+           xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/21">
+    
+    <content>
+        <VBox fx:id="rootPane" alignment="CENTER" spacing="20.0" 
+              style="-fx-background-color: #1E1E2C; -fx-padding: 20;" 
+              minWidth="450.0" prefHeight="550.0">
+            <children>
+                <!-- Header -->
+                <Label text="Create New Transaction" 
+                       style="-fx-text-fill: white; -fx-font-family: 'Inter 18pt'; -fx-font-size: 20px; -fx-font-weight: bold;" />
+
+                <Label text="Enter transaction details to record your investment activity" 
+                       style="-fx-text-fill: #A0A0A0; -fx-font-family: 'Inter 18pt'; -fx-font-size: 14px;" />
+
+                <!-- Form Container -->
+                <VBox alignment="CENTER_LEFT" maxWidth="400.0" minWidth="350.0" spacing="15.0" 
+                      style="-fx-background-color: #2A2A3A; -fx-padding: 30; -fx-background-radius: 10;">
+                    <children>
+                        <!-- Transaction Type -->
+                        <Label style="-fx-text-fill: #E5E7EB; -fx-font-family: 'Inter 18pt'; -fx-font-size: 14px; -fx-font-weight: bold;" text="Transaction Type *" />
+                        <ComboBox fx:id="typeComboBox" promptText="Select transaction type" 
+                                 style="-fx-background-color: #1E1E2C; -fx-text-fill: white; -fx-background-radius: 5; -fx-border-color: #3A3A4A; -fx-border-radius: 5; -fx-padding: 8; -fx-font-size: 14px; -fx-prompt-text-fill: #A0A0A0;" 
+                                 prefWidth="340.0" prefHeight="40.0" />
+
+                        <!-- Description -->
+                        <Label style="-fx-text-fill: #E5E7EB; -fx-font-family: 'Inter 18pt'; -fx-font-size: 14px; -fx-font-weight: bold;" text="Description *" />
+                        <TextField fx:id="descriptionField" promptText="Enter transaction description" 
+                                  style="-fx-background-color: #1E1E2C; -fx-text-fill: white; -fx-prompt-text-fill: #A0A0A0; -fx-background-radius: 5; -fx-border-color: #3A3A4A; -fx-border-radius: 5; -fx-padding: 10; -fx-font-size: 14px;" 
+                                  prefHeight="40.0" />
+
+                        <!-- Amount -->
+                        <Label style="-fx-text-fill: #E5E7EB; -fx-font-family: 'Inter 18pt'; -fx-font-size: 14px; -fx-font-weight: bold;" text="Amount ($) *" />
+                        <TextField fx:id="amountField" promptText="0.00" 
+                                  style="-fx-background-color: #1E1E2C; -fx-text-fill: white; -fx-prompt-text-fill: #A0A0A0; -fx-background-radius: 5; -fx-border-color: #3A3A4A; -fx-border-radius: 5; -fx-padding: 10; -fx-font-size: 14px;" 
+                                  prefHeight="40.0" />
+
+                        <!-- Portfolio -->
+                        <Label style="-fx-text-fill: #E5E7EB; -fx-font-family: 'Inter 18pt'; -fx-font-size: 14px; -fx-font-weight: bold;" text="Portfolio *" />
+                        <ComboBox fx:id="portfolioComboBox" promptText="Select portfolio" 
+                                 style="-fx-background-color: #1E1E2C; -fx-text-fill: white; -fx-background-radius: 5; -fx-border-color: #3A3A4A; -fx-border-radius: 5; -fx-padding: 8; -fx-font-size: 14px; -fx-prompt-text-fill: #A0A0A0;" 
+                                 prefWidth="340.0" prefHeight="40.0" />
+
+                        <!-- Status -->
+                        <Label style="-fx-text-fill: #E5E7EB; -fx-font-family: 'Inter 18pt'; -fx-font-size: 14px; -fx-font-weight: bold;" text="Status" />
+                        <ComboBox fx:id="statusComboBox" promptText="Select status" 
+                                 style="-fx-background-color: #1E1E2C; -fx-text-fill: white; -fx-background-radius: 5; -fx-border-color: #3A3A4A; -fx-border-radius: 5; -fx-padding: 8; -fx-font-size: 14px; -fx-prompt-text-fill: #A0A0A0;" 
+                                 prefWidth="340.0" prefHeight="40.0" />
+
+                        <!-- Asset/Stock Symbol (Optional) -->
+                        <Label style="-fx-text-fill: #E5E7EB; -fx-font-family: 'Inter 18pt'; -fx-font-size: 14px; -fx-font-weight: bold;" text="Asset/Stock Symbol" />
+                        <TextField fx:id="assetField" promptText="e.g., AAPL, MSFT, etc. (optional)" 
+                                  style="-fx-background-color: #1E1E2C; -fx-text-fill: white; -fx-prompt-text-fill: #A0A0A0; -fx-background-radius: 5; -fx-border-color: #3A3A4A; -fx-border-radius: 5; -fx-padding: 10; -fx-font-size: 14px;" 
+                                  prefHeight="40.0" />
+
+                        <!-- Number of Shares (Optional) -->
+                        <Label style="-fx-text-fill: #E5E7EB; -fx-font-family: 'Inter 18pt'; -fx-font-size: 14px; -fx-font-weight: bold;" text="Number of Shares" />
+                        <TextField fx:id="sharesField" promptText="Number of shares (optional)" 
+                                  style="-fx-background-color: #1E1E2C; -fx-text-fill: white; -fx-prompt-text-fill: #A0A0A0; -fx-background-radius: 5; -fx-border-color: #3A3A4A; -fx-border-radius: 5; -fx-padding: 10; -fx-font-size: 14px;" 
+                                  prefHeight="40.0" />
+
+                        <!-- Help Text -->
+                        <Label style="-fx-text-fill: #A0A0A0; -fx-font-family: 'Inter 18pt'; -fx-font-size: 12px; -fx-padding: 10 0 0 0;" 
+                               text="Create a new transaction to track your investment activities." />
+
+                        <!-- Buttons -->
+                        <HBox spacing="10.0" alignment="CENTER" style="-fx-padding: 15 0 0 0;">
+                            <children>
+                                <Button fx:id="cancelButton" text="Cancel" onAction="#handleCancelAction"
+                                        style="-fx-background-color: transparent; -fx-border-color: #6B7280; -fx-border-radius: 5; -fx-text-fill: #E5E7EB; -fx-font-family: 'Inter 18pt'; -fx-font-weight: bold; -fx-padding: 12 20; -fx-background-radius: 5; -fx-font-size: 14px;" 
+                                        prefHeight="45.0" prefWidth="120.0" />
+                                
+                                <Button fx:id="createButton" defaultButton="true" text="Create Transaction" onAction="#handleCreateAction"
+                                        style="-fx-background-color: #0A84FF; -fx-text-fill: white; -fx-font-family: 'Inter 18pt'; -fx-font-weight: bold; -fx-padding: 12 20; -fx-background-radius: 5; -fx-font-size: 14px;" 
+                                        prefHeight="45.0" prefWidth="160.0" />
+                            </children>
+                        </HBox>
+                    </children>
+                </VBox>
+
+                <!-- Small spacing at the bottom -->
+                <Region prefHeight="15" />
+            </children>
+        </VBox>
+    </content>
+</ScrollPane>

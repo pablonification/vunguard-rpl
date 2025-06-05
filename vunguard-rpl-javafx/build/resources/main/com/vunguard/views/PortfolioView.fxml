@@ -60,7 +60,7 @@
                                         <TableColumn fx:id="returnColumn" text="Return" prefWidth="100.0" />
                                         <TableColumn fx:id="assetsColumn" text="Assets" prefWidth="100.0" />
                                         <TableColumn fx:id="lastUpdatedColumn" text="Last Updated" prefWidth="150.0" />
-                                        <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="150.0" minWidth="150.0" />
+                                        <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="100.0" minWidth="100.0" />
                                     </columns>
                                     <placeholder>
                                         <Label text="No portfolios found. Create your first portfolio to get started." style="-fx-text-fill: #A0A0A0;" />
@@ -73,4 +73,4 @@
             </content>
         </ScrollPane>
     </center>
-</BorderPane> 
+</BorderPane>
