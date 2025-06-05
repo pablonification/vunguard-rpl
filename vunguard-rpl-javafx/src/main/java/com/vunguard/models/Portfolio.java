@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 public class Portfolio {
+    private String id;
     private String name;
     private double assetValue;
     private double cashBalance;
@@ -12,7 +13,8 @@ public class Portfolio {
     private int numberOfAssets;
     private LocalDateTime lastUpdated;
 
-    public Portfolio(String name, double assetValue, double cashBalance, double returnPercentage, int numberOfAssets) {
+    public Portfolio(String id, String name, double assetValue, double cashBalance, double returnPercentage, int numberOfAssets) {
+        this.id = id;
         this.name = name;
         this.assetValue = assetValue;
         this.cashBalance = cashBalance;
@@ -20,9 +22,11 @@ public class Portfolio {
         this.returnPercentage = returnPercentage;
         this.numberOfAssets = numberOfAssets;
         this.lastUpdated = LocalDateTime.now();
+    }    // Getters
+    public String getId() {
+        return id;
     }
 
-    // Getters
     public String getName() {
         return name;
     }
@@ -54,9 +58,11 @@ public class Portfolio {
     public String getLastUpdatedFormatted() {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM d, yyyy");
         return lastUpdated.format(formatter);
+    }    // Setters
+    public void setId(String id) {
+        this.id = id;
     }
 
-    // Setters
     public void setName(String name) {
         this.name = name;
     }

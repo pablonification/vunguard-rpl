@@ -3,18 +3,25 @@ package com.vunguard.controllers;
 import com.vunguard.models.User;
 import com.vunguard.controllers.RegistrationController;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.layout.VBox;
+import javafx.scene.control.ScrollPane;
 import javafx.util.Callback;
 import javafx.scene.layout.HBox;
 import javafx.geometry.Pos;
 import javafx.geometry.Insets;
 import javafx.scene.paint.Color;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+import javafx.stage.Modality;
+import javafx.event.ActionEvent;
 import java.time.LocalDate;
 import java.util.Arrays;
+import java.io.IOException;
 
 public class AccountsController {
 
@@ -40,13 +47,19 @@ public class AccountsController {
     private TableColumn<User, String> createdColumn;
 
     @FXML
-    private TableColumn<User, Void> actionsColumn;
-
-    @FXML
+    private TableColumn<User, Void> actionsColumn;    @FXML
     private SidebarController sidebarViewController;
 
     // Sample data for users
     private ObservableList<User> userList = FXCollections.observableArrayList();
+
+    // Edit dialog fields
+    private TextField editUsernameField;
+    private TextField editFullNameField;
+    private TextField editEmailField;
+    private ComboBox<String> editRoleComboBox;
+    private Stage editDialogStage;
+    private User currentEditingUser;
 
     @FXML
     private void initialize() {
@@ -199,15 +212,182 @@ public class AccountsController {
                 };
             }
         });
+    }        private void showEditUserDialog(User user) {
+        try {
+            currentEditingUser = user;
+            
+            // Load the FXML file
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/vunguard/views/EditUserView.fxml"));
+            ScrollPane editDialogRoot = loader.load();
+            
+            // Try different approaches to find the elements
+            // First, try direct lookup on the scene root
+            editUsernameField = (TextField) editDialogRoot.lookup("#usernameField");
+            editFullNameField = (TextField) editDialogRoot.lookup("#fullNameField");
+            editEmailField = (TextField) editDialogRoot.lookup("#emailField");
+            editRoleComboBox = (ComboBox<String>) editDialogRoot.lookup("#roleComboBox");
+            
+            // If direct lookup failed, try looking within the content
+            if (editUsernameField == null) {
+                VBox contentVBox = (VBox) editDialogRoot.getContent();
+                if (contentVBox != null) {
+                    editUsernameField = (TextField) contentVBox.lookup("#usernameField");
+                    editFullNameField = (TextField) contentVBox.lookup("#fullNameField");
+                    editEmailField = (TextField) contentVBox.lookup("#emailField");
+                    editRoleComboBox = (ComboBox<String>) contentVBox.lookup("#roleComboBox");
+                }
+            }
+            
+            // Debug: Check if elements are found
+            System.out.println("Username field found: " + (editUsernameField != null));
+            System.out.println("Full name field found: " + (editFullNameField != null));
+            System.out.println("Email field found: " + (editEmailField != null));
+            System.out.println("Role ComboBox found: " + (editRoleComboBox != null));
+            
+            // Check if all required elements were found
+            if (editUsernameField == null || editFullNameField == null || 
+                editEmailField == null || editRoleComboBox == null) {
+                throw new RuntimeException("Could not find all required form elements in FXML");
+            }
+            
+            // Set up role ComboBox
+            editRoleComboBox.setItems(FXCollections.observableArrayList("Admin", "Investor", "Manager", "Analyst"));
+            
+            // Populate fields with current user data
+            editUsernameField.setText(user.getUsername());
+            editFullNameField.setText(user.getFullName());
+            editEmailField.setText(user.getEmail());
+            editRoleComboBox.setValue(user.getRole());
+            
+            // Set up button actions
+            Button cancelButton = (Button) editDialogRoot.lookup("#cancelButton");
+            Button saveButton = (Button) editDialogRoot.lookup("#saveButton");
+            
+            if (cancelButton == null) {
+                VBox contentVBox = (VBox) editDialogRoot.getContent();
+                if (contentVBox != null) {
+                    cancelButton = (Button) contentVBox.lookup("#cancelButton");
+                    saveButton = (Button) contentVBox.lookup("#saveButton");
+                }
+            }
+            
+            if (cancelButton != null && saveButton != null) {
+                cancelButton.setOnAction(this::handleCancelEditAction);
+                saveButton.setOnAction(this::handleSaveEditAction);
+            }
+            
+            // Create and show the dialog
+            editDialogStage = new Stage();
+            editDialogStage.setTitle("Edit User - " + user.getUsername());
+            editDialogStage.initModality(Modality.APPLICATION_MODAL);
+            editDialogStage.setScene(new Scene(editDialogRoot));
+            editDialogStage.setResizable(false);
+            
+            // Center the dialog
+            editDialogStage.centerOnScreen();
+            editDialogStage.showAndWait();
+            
+        } catch (IOException e) {
+            System.err.println("Error loading edit user dialog: " + e.getMessage());
+            e.printStackTrace();
+            
+            // Fallback to simple alert if FXML loading fails
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Error");
+            alert.setHeaderText("Failed to load edit dialog");
+            alert.setContentText("Could not load the edit user interface. Please try again.");
+            alert.showAndWait();
+        }
     }
     
-    private void showEditUserDialog(User user) {
-        // In a real app, show a dialog to edit user details
+    private void handleCancelEditAction(ActionEvent event) {
+        if (editDialogStage != null) {
+            editDialogStage.close();
+        }
+    }
+    
+    private void handleSaveEditAction(ActionEvent event) {
+        if (currentEditingUser == null) {
+            return;
+        }
+        
+        // Get form values
+        String username = editUsernameField.getText().trim();
+        String fullName = editFullNameField.getText().trim();
+        String email = editEmailField.getText().trim();
+        String role = editRoleComboBox.getValue();
+        
+        // Validate input
+        if (username.isEmpty() || fullName.isEmpty() || email.isEmpty() || role == null) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Validation Error");
+            alert.setHeaderText("Missing Required Fields");
+            alert.setContentText("Please fill in all required fields.");
+            alert.showAndWait();
+            return;
+        }
+        
+        // Validate email format
+        if (!isValidEmail(email)) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Validation Error");
+            alert.setHeaderText("Invalid Email");
+            alert.setContentText("Please enter a valid email address.");
+            alert.showAndWait();
+            return;
+        }
+        
+        // Check if username is taken by another user
+        boolean usernameExists = userList.stream()
+            .anyMatch(u -> !u.equals(currentEditingUser) && u.getUsername().equalsIgnoreCase(username));
+        
+        if (usernameExists) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Validation Error");
+            alert.setHeaderText("Username Already Exists");
+            alert.setContentText("This username is already taken by another user.");
+            alert.showAndWait();
+            return;
+        }
+        
+        // Check if email is taken by another user
+        boolean emailExists = userList.stream()
+            .anyMatch(u -> !u.equals(currentEditingUser) && u.getEmail().equalsIgnoreCase(email));
+        
+        if (emailExists) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Validation Error");
+            alert.setHeaderText("Email Already Exists");
+            alert.setContentText("This email is already used by another user.");
+            alert.showAndWait();
+            return;
+        }
+        
+        // Update user data
+        currentEditingUser.setUsername(username);
+        currentEditingUser.setFullName(fullName);
+        currentEditingUser.setEmail(email);
+        currentEditingUser.setRole(role);
+        
+        // Refresh the table to show updated data
+        accountsTable.refresh();
+        
+        // Show success message
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Edit User");
-        alert.setHeaderText("Edit User " + user.getUsername());
-        alert.setContentText("This would show a form to edit user details.");
+        alert.setTitle("Success");
+        alert.setHeaderText("User Updated");
+        alert.setContentText("User information has been successfully updated.");
         alert.showAndWait();
+        
+        // Close the dialog
+        if (editDialogStage != null) {
+            editDialogStage.close();
+        }
+    }
+    
+    private boolean isValidEmail(String email) {
+        // Simple email validation
+        return email.contains("@") && email.contains(".") && email.length() > 5;
     }
     
     private void showDeleteConfirmation(User user) {

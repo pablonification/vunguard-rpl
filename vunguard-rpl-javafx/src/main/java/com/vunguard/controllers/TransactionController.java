@@ -135,13 +135,6 @@ public class TransactionController {
     }
 
     private void initializeSampleData() {
-        transactionList.addAll(
-            new Transaction("TRX-001", "Buy", "Purchase of AAPL stock", 1500.00, "Growth Portfolio", LocalDateTime.now().minusDays(5), "Completed"),
-            new Transaction("TRX-002", "Sell", "Sale of MSFT stock", 2200.00, "Income Portfolio", LocalDateTime.now().minusDays(3), "Completed"),
-            new Transaction("TRX-003", "Deposit", "Cash deposit", 5000.00, "Conservative Portfolio", LocalDateTime.now().minusDays(2), "Processing"),
-            new Transaction("TRX-004", "Dividend", "Dividend from GOOGL", 150.00, "Growth Portfolio", LocalDateTime.now().minusDays(1), "Completed"),
-            new Transaction("TRX-005", "Buy", "Purchase of TSLA stock", 3000.00, "Growth Portfolio", LocalDateTime.now(), "Pending")
-        );
     }
 
     private void setupTableColumns() {

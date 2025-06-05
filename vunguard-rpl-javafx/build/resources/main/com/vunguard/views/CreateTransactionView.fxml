@@ -23,7 +23,7 @@
               minWidth="450.0" prefHeight="550.0">
             <children>
                 <!-- Header -->
-                <Label text="Create New Transaction" 
+                <Label text="Record Transaction" 
                        style="-fx-text-fill: white; -fx-font-family: 'Inter 18pt'; -fx-font-size: 20px; -fx-font-weight: bold;" />
 
                 <Label text="Enter transaction details to record your investment activity" 
@@ -77,7 +77,7 @@
 
                         <!-- Help Text -->
                         <Label style="-fx-text-fill: #A0A0A0; -fx-font-family: 'Inter 18pt'; -fx-font-size: 12px; -fx-padding: 10 0 0 0;" 
-                               text="Create a new transaction to track your investment activities." />
+                               text="Record your transaction to track your investment activities." />
 
                         <!-- Buttons -->
                         <HBox spacing="10.0" alignment="CENTER" style="-fx-padding: 15 0 0 0;">

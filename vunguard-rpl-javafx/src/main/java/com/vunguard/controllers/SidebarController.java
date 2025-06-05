@@ -101,12 +101,15 @@ public class SidebarController {
     private void handleCollapseAction(ActionEvent event) {
         System.out.println("Collapse button clicked");
         // Logika untuk collapse/expand sidebar bisa ditambahkan di sini
-    }
-
-    @FXML
+    }    @FXML
     private void handleSupportAction(ActionEvent event) {
         System.out.println("Support button clicked");
-        setActiveButton(supportButton); // Mungkin tidak perlu setActive untuk ini
+        setActiveButton(supportButton);
+        try {
+            Main.loadSupportScene();
+        } catch (IOException e) {
+            System.err.println("Error loading Support scene: " + e.getMessage());
+        }
     }
 
     @FXML
@@ -151,9 +154,12 @@ public class SidebarController {
     public Button getPerformanceButton() {
         return performanceButton;
     }
-    
-    public Button getAccountsButton() {
+      public Button getAccountsButton() {
         return accountsButton;
+    }
+    
+    public Button getSupportButton() {
+        return supportButton;
     }
     
     public void setActiveButton(Button activeButton) {

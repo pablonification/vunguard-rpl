@@ -438,9 +438,7 @@ private void debugPrintAllNodes(javafx.scene.Node node, int depth) {
             showAlert("Please enter valid numbers for numeric fields!", Alert.AlertType.ERROR);
             return false;
         }
-    }
-
-    private Portfolio createPortfolioFromInput() {
+    }    private Portfolio createPortfolioFromInput() {
         try {
             String name = nameField.getText().trim();
             double assetValue = assetValueField.getText().isEmpty() ? 0.0 : Double.parseDouble(assetValueField.getText());
@@ -448,7 +446,10 @@ private void debugPrintAllNodes(javafx.scene.Node node, int depth) {
             double returnPercentage = returnField.getText().isEmpty() ? 0.0 : Double.parseDouble(returnField.getText());
             int numberOfAssets = assetsField.getText().isEmpty() ? 0 : Integer.parseInt(assetsField.getText());
             
-            return new Portfolio(name, assetValue, cashBalance, returnPercentage, numberOfAssets);
+            // Generate a unique ID for the new portfolio
+            String id = "PF" + String.format("%03d", portfolioList.size() + 1);
+            
+            return new Portfolio(id, name, assetValue, cashBalance, returnPercentage, numberOfAssets);
             
         } catch (NumberFormatException e) {
             showAlert("Please enter valid numbers for numeric fields!", Alert.AlertType.ERROR);
