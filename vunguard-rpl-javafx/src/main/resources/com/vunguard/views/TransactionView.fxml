@@ -28,7 +28,7 @@
                             <children>
                                 <Label text="Transactions" style="-fx-font-size: 28px; -fx-text-fill: white; -fx-font-weight: bold;"/>
                                 <Region HBox.hgrow="ALWAYS" />
-                                <Button fx:id="newTransactionButton" text="New Transaction" 
+                                <Button fx:id="newTransactionButton" text="Record Transaction" 
                                         style="-fx-background-color: #0A84FF; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 20;">
                                     <padding>
                                         <Insets left="15" right="15" top="8" bottom="8" />
@@ -71,7 +71,7 @@
                                 <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="150.0" minWidth="150.0" />
                             </columns>
                             <placeholder>
-                                <Label text="No transactions found. Click 'New Transaction' to create one." style="-fx-text-fill: #A0A0A0;" />
+                                <Label text="No transactions found. Click 'Record Transaction' to record one." style="-fx-text-fill: #A0A0A0;" />
                             </placeholder>
                         </TableView>
                     </children>
