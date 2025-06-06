@@ -8,6 +8,7 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.geometry.Insets?>
 
@@ -25,47 +26,61 @@
                         <!-- Main Header and Create Button -->
                         <HBox alignment="CENTER_LEFT">
                             <children>
-                                <Label text="Portfolios" style="-fx-font-size: 28px; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                                <VBox spacing="5">
+                                    <children>
+                                        <Label text="Portfolios" style="-fx-font-size: 28px; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                                        <Label text="Manage your investment portfolios and track their performance." 
+                                               style="-fx-text-fill: #A0A0A0; -fx-font-size: 14px;"/>
+                                    </children>
+                                </VBox>
                                 <Region HBox.hgrow="ALWAYS" />
-                                <Button fx:id="createPortfolioButton" text="Create Portfolio" 
-                                        style="-fx-background-color: #4ADE80; -fx-text-fill: #0F172A; -fx-font-weight: bold; -fx-background-radius: 20;">
-                                    <graphic>
-                                        <Label text="+" style="-fx-text-fill: #0F172A; -fx-font-weight: bold; -fx-font-size: 16px;"/>
-                                    </graphic>
-                                    <padding>
-                                        <Insets left="15" right="15" top="8" bottom="8" />
-                                    </padding>
-                                </Button>
+                                <Button fx:id="createPortfolioButton" text="+ Create Portfolio" 
+                                        style="-fx-background-color: #10B981; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-padding: 10 16; -fx-font-size: 14px;"/>
                             </children>
                         </HBox>
                         
-                        <!-- Description -->
-                        <Label text="Manage your investment portfolios and track their performance." 
-                               style="-fx-text-fill: #A0A0A0; -fx-font-size: 14px;"/>
+                        <!-- Investor Selection Section (for managers/analysts) -->
+                        <VBox fx:id="investorSelectionSection" spacing="10.0" style="-fx-padding: 20 0;">
+                            <children>
+                                <Label text="Investor Selection" style="-fx-font-size: 20px; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                                <Label text="Select an investor to view their portfolio data" 
+                                       style="-fx-text-fill: #A0A0A0; -fx-font-size: 14px;"/>
+                                <ComboBox fx:id="investorSelectionComboBox" promptText="Select investor..." prefWidth="300"
+                                         style="-fx-background-color: #2A2A3A; -fx-text-fill: white; -fx-border-color: #3A3A4A; -fx-border-radius: 4; -fx-background-radius: 4;"/>
+                            </children>
+                        </VBox>
                         
                         <!-- Your Portfolios Section -->
-                        <VBox spacing="10.0" style="-fx-padding: 20 0 0 0;">
+                        <VBox spacing="15.0" style="-fx-padding: 20 0 0 0;">
                             <children>
-                                <Label text="Your Portfolios" style="-fx-font-size: 20px; -fx-text-fill: white; -fx-font-weight: bold;"/>
-                                <Label text="Manage and monitor your investment portfolios."
-                                       style="-fx-text-fill: #A0A0A0; -fx-font-size: 14px;"/>
+                                <VBox spacing="5">
+                                    <children>
+                                        <Label text="Your Portfolios" style="-fx-font-size: 20px; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                                        <Label text="Manage and monitor your investment portfolios."
+                                               style="-fx-text-fill: #A0A0A0; -fx-font-size: 14px;"/>
+                                    </children>
+                                </VBox>
                                 
                                 <!-- Table Section -->
-                                <TableView fx:id="portfolioTable" style="-fx-background-color: #2A2A3A; -fx-text-fill: white; -fx-padding: 10;" VBox.vgrow="ALWAYS">
-                                    <columns>
-                                        <TableColumn fx:id="nameColumn" text="Name" prefWidth="150.0" />
-                                        <TableColumn fx:id="assetValueColumn" text="Asset Value" prefWidth="120.0" />
-                                        <TableColumn fx:id="cashBalanceColumn" text="Cash Balance" prefWidth="120.0" />
-                                        <TableColumn fx:id="totalValueColumn" text="Total Value" prefWidth="120.0" />
-                                        <TableColumn fx:id="returnColumn" text="Return" prefWidth="100.0" />
-                                        <TableColumn fx:id="assetsColumn" text="Assets" prefWidth="100.0" />
-                                        <TableColumn fx:id="lastUpdatedColumn" text="Last Updated" prefWidth="150.0" />
-                                        <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="100.0" minWidth="100.0" />
-                                    </columns>
-                                    <placeholder>
-                                        <Label text="No portfolios found. Create your first portfolio to get started." style="-fx-text-fill: #A0A0A0;" />
-                                    </placeholder>
-                                </TableView>
+                                <VBox style="-fx-background-color: #2A2A3A; -fx-border-color: #3A3A4A; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 20;">
+                                    <children>
+                                        <TableView fx:id="portfolioTable" style="-fx-background-color: transparent; -fx-text-fill: white;" prefHeight="400">
+                                            <columns>
+                                                <TableColumn fx:id="nameColumn" text="Name" prefWidth="150.0" />
+                                                <TableColumn fx:id="assetValueColumn" text="Asset Value" prefWidth="120.0" />
+                                                <TableColumn fx:id="cashBalanceColumn" text="Cash Balance" prefWidth="120.0" />
+                                                <TableColumn fx:id="totalValueColumn" text="Total Value" prefWidth="120.0" />
+                                                <TableColumn fx:id="returnColumn" text="Return" prefWidth="100.0" />
+                                                <TableColumn fx:id="assetsColumn" text="Assets" prefWidth="100.0" />
+                                                <TableColumn fx:id="lastUpdatedColumn" text="Last Updated" prefWidth="150.0" />
+                                                <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="100.0" minWidth="100.0" />
+                                            </columns>
+                                            <placeholder>
+                                                <Label text="No portfolios found. Create your first portfolio to get started." style="-fx-text-fill: #A0A0A0;" />
+                                            </placeholder>
+                                        </TableView>
+                                    </children>
+                                </VBox>
                             </children>
                         </VBox>
                     </children>

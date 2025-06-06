@@ -23,57 +23,66 @@
             <content>
                 <VBox fx:id="contentArea" alignment="TOP_LEFT" spacing="20.0" style="-fx-background-color: #1E1E2C; -fx-padding: 30;">
                     <children>
-                        <!-- Main Header and New Transaction Button -->
+                        <!-- Main Header and Record Transaction Button -->
                         <HBox alignment="CENTER_LEFT">
                             <children>
-                                <Label text="Transactions" style="-fx-font-size: 28px; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                                <VBox spacing="5">
+                                    <children>
+                                        <Label text="Transactions" style="-fx-font-size: 28px; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                                        <Label text="View and manage all investment transactions." 
+                                               style="-fx-text-fill: #A0A0A0; -fx-font-size: 14px;"/>
+                                    </children>
+                                </VBox>
                                 <Region HBox.hgrow="ALWAYS" />
-                                <Button fx:id="newTransactionButton" text="Record Transaction" 
-                                        style="-fx-background-color: #0A84FF; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 20;">
-                                    <padding>
-                                        <Insets left="15" right="15" top="8" bottom="8" />
-                                    </padding>
-                                </Button>
+                                <Button fx:id="newTransactionButton" text="+ Record Transaction" 
+                                        style="-fx-background-color: #10B981; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-padding: 10 16; -fx-font-size: 14px;"/>
                             </children>
                         </HBox>
                         
-                        <!-- Description -->
-                        <Label text="View and manage all your investment transactions." 
-                               style="-fx-text-fill: #A0A0A0; -fx-font-size: 14px;"/>
-                        
-                        <!-- Filter Section -->
-                        <HBox spacing="15" alignment="CENTER_LEFT" style="-fx-padding: 15 0;">
+                        <!-- Investor Selection Section (for managers/analysts) -->
+                        <VBox fx:id="investorSelectionSection" spacing="10.0" style="-fx-padding: 20 0;">
                             <children>
-                                <Label text="Filter by:" style="-fx-text-fill: white; -fx-font-size: 14px;"/>
-                                <ComboBox fx:id="typeFilter" promptText="All Types" prefWidth="150" />
-                                <ComboBox fx:id="portfolioFilter" promptText="All Portfolios" prefWidth="150" />
-                                <ComboBox fx:id="statusFilter" promptText="All Statuses" prefWidth="150" />
-                                <Region HBox.hgrow="ALWAYS" />
-                                <Button fx:id="clearFiltersButton" text="Clear Filters" 
-                                        style="-fx-background-color: transparent; -fx-border-color: #6B7280; -fx-border-radius: 4; -fx-text-fill: #E5E7EB;">
-                                    <padding>
-                                        <Insets left="15" right="15" top="5" bottom="5" />
-                                    </padding>
-                                </Button>
+                                <Label text="Investor Selection" style="-fx-font-size: 20px; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                                <Label text="Select an investor to view their transaction records" 
+                                       style="-fx-text-fill: #A0A0A0; -fx-font-size: 14px;"/>
+                                <ComboBox fx:id="investorSelectionComboBox" promptText="Select investor..." prefWidth="300"
+                                         style="-fx-background-color: #2A2A3A; -fx-text-fill: white; -fx-border-color: #3A3A4A; -fx-border-radius: 4; -fx-background-radius: 4;"/>
                             </children>
-                        </HBox>
+                        </VBox>
                         
-                        <!-- Transaction Table -->
-                        <TableView fx:id="transactionTable" style="-fx-background-color: #2A2A3A; -fx-text-fill: white; -fx-padding: 10;" VBox.vgrow="ALWAYS">
-                            <columns>
-                                <TableColumn fx:id="idColumn" text="ID" prefWidth="100.0" />
-                                <TableColumn fx:id="typeColumn" text="Type" prefWidth="120.0" />
-                                <TableColumn fx:id="descriptionColumn" text="Description" prefWidth="200.0" />
-                                <TableColumn fx:id="amountColumn" text="Amount" prefWidth="120.0" />
-                                <TableColumn fx:id="portfolioColumn" text="Portfolio" prefWidth="150.0" />
-                                <TableColumn fx:id="dateColumn" text="Date" prefWidth="150.0" />
-                                <TableColumn fx:id="statusColumn" text="Status" prefWidth="100.0" />
-                                <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="150.0" minWidth="150.0" />
-                            </columns>
-                            <placeholder>
-                                <Label text="No transactions found. Click 'Record Transaction' to record one." style="-fx-text-fill: #A0A0A0;" />
-                            </placeholder>
-                        </TableView>
+                        <!-- Recent Transactions Section -->
+                        <VBox spacing="15.0" style="-fx-padding: 20 0 0 0;">
+                            <children>
+                                <VBox spacing="5">
+                                    <children>
+                                        <Label text="Recent Transactions" style="-fx-font-size: 20px; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                                        <Label text="A list of recent transactions across all portfolios."
+                                               style="-fx-text-fill: #A0A0A0; -fx-font-size: 14px;"/>
+                                    </children>
+                                </VBox>
+                                
+                                <!-- Table Section -->
+                                <VBox style="-fx-background-color: #2A2A3A; -fx-border-color: #3A3A4A; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 20;">
+                                    <children>
+                                        <TableView fx:id="transactionTable" style="-fx-background-color: transparent; -fx-text-fill: white;" prefHeight="400">
+                                            <columns>
+                                                <TableColumn fx:id="portfolioColumn" text="Portfolio" prefWidth="150.0" />
+                                                <TableColumn fx:id="productColumn" text="Product" prefWidth="150.0" />
+                                                <TableColumn fx:id="typeColumn" text="Type" prefWidth="100.0" />
+                                                <TableColumn fx:id="quantityColumn" text="Quantity" prefWidth="100.0" />
+                                                <TableColumn fx:id="priceColumn" text="Price" prefWidth="120.0" />
+                                                <TableColumn fx:id="totalColumn" text="Total" prefWidth="120.0" />
+                                                <TableColumn fx:id="dateColumn" text="Date" prefWidth="120.0" />
+                                                <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="100.0" minWidth="100.0" />
+                                            </columns>
+                                            <placeholder>
+                                                <Label text="No transactions found. Click 'Record Transaction' to record one." style="-fx-text-fill: #A0A0A0;" />
+                                            </placeholder>
+                                        </TableView>
+                                    </children>
+                                </VBox>
+                            </children>
+                        </VBox>
                     </children>
                 </VBox>
             </content>

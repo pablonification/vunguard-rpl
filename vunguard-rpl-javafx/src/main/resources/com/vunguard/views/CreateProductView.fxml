@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Button?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.layout.ColumnConstraints?>
+
+<VBox xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/21" 
+      spacing="20.0" style="-fx-background-color: #1E1E2C; -fx-padding: 30;" prefWidth="500.0">
+    <children>
+        <!-- Title -->
+        <Label text="Add New Product" style="-fx-font-size: 24px; -fx-text-fill: white; -fx-font-weight: bold;"/>
+        <Label text="Fill in the details below to create a new investment product." 
+               style="-fx-text-fill: #A0A0A0; -fx-font-size: 14px;"/>
+        
+        <!-- Form Fields -->
+        <GridPane hgap="15.0" vgap="15.0">
+            <columnConstraints>
+                <ColumnConstraints halignment="RIGHT" hgrow="NEVER" minWidth="120.0" prefWidth="120.0"/>
+                <ColumnConstraints hgrow="ALWAYS" minWidth="200.0"/>
+            </columnConstraints>
+            
+            <!-- Product Code -->
+            <Label text="Product Code:" style="-fx-text-fill: white; -fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+            <TextField fx:id="codeField" promptText="e.g., TGF001" 
+                      style="-fx-background-color: #2A2A3A; -fx-text-fill: white; -fx-border-color: #3A3A4A; -fx-border-radius: 4; -fx-background-radius: 4; -fx-padding: 8;" 
+                      GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+            
+            <!-- Product Name -->
+            <Label text="Product Name:" style="-fx-text-fill: white; -fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+            <TextField fx:id="nameField" promptText="e.g., Tech Growth Fund" 
+                      style="-fx-background-color: #2A2A3A; -fx-text-fill: white; -fx-border-color: #3A3A4A; -fx-border-radius: 4; -fx-background-radius: 4; -fx-padding: 8;" 
+                      GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+            
+            <!-- Strategy -->
+            <Label text="Strategy:" style="-fx-text-fill: white; -fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+            <ComboBox fx:id="strategyComboBox" promptText="Select strategy" 
+                     style="-fx-background-color: #2A2A3A; -fx-text-fill: white; -fx-border-color: #3A3A4A; -fx-border-radius: 4; -fx-background-radius: 4;" 
+                     GridPane.columnIndex="1" GridPane.rowIndex="2" prefWidth="200.0"/>
+            
+            <!-- Risk Level -->
+            <Label text="Risk Level:" style="-fx-text-fill: white; -fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+            <ComboBox fx:id="riskLevelComboBox" promptText="Select risk level" 
+                     style="-fx-background-color: #2A2A3A; -fx-text-fill: white; -fx-border-color: #3A3A4A; -fx-border-radius: 4; -fx-background-radius: 4;" 
+                     GridPane.columnIndex="1" GridPane.rowIndex="3" prefWidth="200.0"/>
+            
+            <!-- Description -->
+            <Label text="Description:" style="-fx-text-fill: white; -fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+            <TextArea fx:id="descriptionField" promptText="Enter product description..." 
+                     style="-fx-background-color: #2A2A3A; -fx-text-fill: white; -fx-border-color: #3A3A4A; -fx-border-radius: 4; -fx-background-radius: 4; -fx-control-inner-background: #2A2A3A;" 
+                     GridPane.columnIndex="1" GridPane.rowIndex="4" prefRowCount="3" wrapText="true"/>
+        </GridPane>
+        
+        <!-- Buttons -->
+        <HBox spacing="10.0" alignment="CENTER_RIGHT">
+            <children>
+                <Button fx:id="cancelButton" text="Cancel" onAction="#handleCancelAction"
+                       style="-fx-background-color: transparent; -fx-text-fill: #A0A0A0; -fx-border-color: #3A3A4A; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 8 16; -fx-font-weight: bold;"/>
+                <Button fx:id="saveButton" text="Add Product" onAction="#handleSaveAction"
+                       style="-fx-background-color: #10B981; -fx-text-fill: white; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 8 16; -fx-font-weight: bold;"/>
+            </children>
+        </HBox>
+    </children>
+</VBox> 

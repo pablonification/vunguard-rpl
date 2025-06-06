@@ -7,6 +7,8 @@
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.geometry.Insets?>
 
@@ -24,45 +26,142 @@
                         <!-- Header -->
                         <HBox alignment="CENTER_LEFT">
                             <children>
-                                <Label text="Performance" style="-fx-font-size: 28px; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                                <VBox spacing="5">
+                                    <children>
+                                        <Label text="Performance" style="-fx-font-size: 28px; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                                        <Label text="Track and analyze the performance of your investment portfolios." 
+                                               style="-fx-text-fill: #A0A0A0; -fx-font-size: 14px;"/>
+                                    </children>
+                                </VBox>
                                 <Region HBox.hgrow="ALWAYS" />
-                                <Button fx:id="refreshButton" text="Refresh Data" 
-                                        style="-fx-background-color: #6B7280; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 20;">
-                                    <padding>
-                                        <Insets left="15" right="15" top="8" bottom="8" />
-                                    </padding>
-                                </Button>
+                                <HBox spacing="10" alignment="CENTER_RIGHT">
+                                    <children>
+                                        <ComboBox fx:id="timeRangeFilter" promptText="All Time" prefWidth="120" 
+                                                 style="-fx-background-color: #2A2A3A; -fx-text-fill: white; -fx-border-color: #3A3A4A; -fx-border-radius: 6; -fx-background-radius: 6;"/>
+                                        <Button fx:id="generateReportButton" text="📊 Generate Report" 
+                                                style="-fx-background-color: #10B981; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-padding: 8 16; -fx-font-size: 14px;"/>
+                                    </children>
+                                </HBox>
                             </children>
                         </HBox>
                         
-                        <!-- Description -->
-                        <Label text="Track and analyze your investment performance across all portfolios." 
-                               style="-fx-text-fill: #A0A0A0; -fx-font-size: 14px;"/>
-                        
-                        <!-- Time Range Filter -->
-                        <HBox spacing="15" alignment="CENTER_LEFT" style="-fx-padding: 15 0;">
-                            <children>
-                                <Label text="Time Range:" style="-fx-text-fill: white; -fx-font-size: 14px;"/>
-                                <ComboBox fx:id="timeRangeFilter" promptText="Select Range" prefWidth="150" />
-                                <Label text="Portfolio:" style="-fx-text-fill: white; -fx-font-size: 14px;"/>
-                                <ComboBox fx:id="portfolioFilter" promptText="All Portfolios" prefWidth="150" />
-                            </children>
-                        </HBox>
-                        
-                        <!-- Performance Summary Cards -->
-                        <VBox fx:id="summarySection" spacing="20.0" style="-fx-padding: 20 0;">
-                            <!-- Cards will be added programmatically -->
-                        </VBox>
-                        
-                        <!-- Charts Section -->
-                        <VBox fx:id="chartsSection" spacing="20.0" style="-fx-padding: 20 0;">
-                            <!-- Charts will be added programmatically -->
-                        </VBox>
-                        
-                        <!-- Performance Details Section -->
-                        <VBox fx:id="detailsSection" spacing="20.0" style="-fx-padding: 20 0;">
-                            <!-- Details will be added programmatically -->
-                        </VBox>
+                        <!-- Tabs -->
+                        <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE" 
+                                style="-fx-background-color: transparent; -fx-tab-min-height: 40; -fx-tab-max-height: 40;">
+                            
+                            <!-- Overview Tab -->
+                            <Tab text="Overview" fx:id="overviewTab">
+                                <content>
+                                    <VBox fx:id="overviewContent" spacing="30.0" style="-fx-padding: 20 0;">
+                                        <!-- Performance Over Time Section -->
+                                        <VBox spacing="15">
+                                            <children>
+                                                <VBox spacing="5">
+                                                    <children>
+                                                        <Label text="Performance Over Time" style="-fx-font-size: 20px; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                                                        <Label text="Track how your portfolios have performed over the selected time period." 
+                                                               style="-fx-text-fill: #A0A0A0; -fx-font-size: 14px;"/>
+                                                    </children>
+                                                </VBox>
+                                                <VBox fx:id="performanceChartContainer" 
+                                                      style="-fx-background-color: #2A2A3A; -fx-border-color: #3A3A4A; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 20;" 
+                                                      prefHeight="300">
+                                                    <!-- Chart will be added programmatically -->
+                                                </VBox>
+                                            </children>
+                                        </VBox>
+                                        
+                                        <!-- Portfolio Returns Section -->
+                                        <VBox spacing="15">
+                                            <children>
+                                                <VBox spacing="5">
+                                                    <children>
+                                                        <Label text="Portfolio Returns" style="-fx-font-size: 20px; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                                                        <Label text="Compare returns across different portfolios." 
+                                                               style="-fx-text-fill: #A0A0A0; -fx-font-size: 14px;"/>
+                                                    </children>
+                                                </VBox>
+                                                <VBox fx:id="returnsChartContainer" 
+                                                      style="-fx-background-color: #2A2A3A; -fx-border-color: #3A3A4A; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 20;" 
+                                                      prefHeight="300">
+                                                    <!-- Chart will be added programmatically -->
+                                                </VBox>
+                                            </children>
+                                        </VBox>
+                                    </VBox>
+                                </content>
+                            </Tab>
+                            
+                            <!-- Benchmark Comparison Tab -->
+                            <Tab text="Benchmark Comparison" fx:id="benchmarkTab">
+                                <content>
+                                    <VBox fx:id="benchmarkContent" spacing="30.0" style="-fx-padding: 20 0;">
+                                        <VBox spacing="15">
+                                            <children>
+                                                <VBox spacing="5">
+                                                    <children>
+                                                        <Label text="Benchmark Comparison" style="-fx-font-size: 20px; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                                                        <Label text="Compare your portfolio performance against relevant benchmarks." 
+                                                               style="-fx-text-fill: #A0A0A0; -fx-font-size: 14px;"/>
+                                                    </children>
+                                                </VBox>
+                                                <VBox fx:id="benchmarkTableContainer" 
+                                                      style="-fx-background-color: #2A2A3A; -fx-border-color: #3A3A4A; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 20;">
+                                                    <!-- Table will be added programmatically -->
+                                                </VBox>
+                                            </children>
+                                        </VBox>
+                                    </VBox>
+                                </content>
+                            </Tab>
+                            
+                            <!-- Asset Allocation Tab -->
+                            <Tab text="Asset Allocation" fx:id="assetAllocationTab">
+                                <content>
+                                    <VBox fx:id="allocationContent" spacing="30.0" style="-fx-padding: 20 0;">
+                                        <HBox spacing="30" alignment="TOP_CENTER">
+                                            <children>
+                                                <!-- Current Asset Allocation -->
+                                                <VBox spacing="15" HBox.hgrow="ALWAYS">
+                                                    <children>
+                                                        <VBox spacing="5">
+                                                            <children>
+                                                                <Label text="Current Asset Allocation" style="-fx-font-size: 20px; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                                                                <Label text="View how your assets are currently allocated across different categories." 
+                                                                       style="-fx-text-fill: #A0A0A0; -fx-font-size: 14px;"/>
+                                                            </children>
+                                                        </VBox>
+                                                        <VBox fx:id="assetAllocationChartContainer" 
+                                                              style="-fx-background-color: #2A2A3A; -fx-border-color: #3A3A4A; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 20;" 
+                                                              prefHeight="400">
+                                                            <!-- Pie chart will be added programmatically -->
+                                                        </VBox>
+                                                    </children>
+                                                </VBox>
+                                                
+                                                <!-- Allocation by Risk Level -->
+                                                <VBox spacing="15" HBox.hgrow="ALWAYS">
+                                                    <children>
+                                                        <VBox spacing="5">
+                                                            <children>
+                                                                <Label text="Allocation by Risk Level" style="-fx-font-size: 20px; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                                                                <Label text="See how your investments are distributed across different risk levels." 
+                                                                       style="-fx-text-fill: #A0A0A0; -fx-font-size: 14px;"/>
+                                                            </children>
+                                                        </VBox>
+                                                        <VBox fx:id="riskAllocationChartContainer" 
+                                                              style="-fx-background-color: #2A2A3A; -fx-border-color: #3A3A4A; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 20;" 
+                                                              prefHeight="400">
+                                                            <!-- Pie chart will be added programmatically -->
+                                                        </VBox>
+                                                    </children>
+                                                </VBox>
+                                            </children>
+                                        </HBox>
+                                    </VBox>
+                                </content>
+                            </Tab>
+                        </TabPane>
                     </children>
                 </VBox>
             </content>

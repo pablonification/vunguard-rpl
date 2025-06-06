@@ -12,11 +12,17 @@ public class SidebarController {
     @FXML
     private Button dashboardButton;
     @FXML
+    private Button productsButton;
+    @FXML
     private Button portfoliosButton;
     @FXML
     private Button transactionsButton;
     @FXML
     private Button performanceButton;
+    @FXML
+    private Button reviewRecommendationsButton;
+    @FXML
+    private Button investmentRecommendationsButton;
     @FXML
     private Button accountsButton;
     @FXML
@@ -26,16 +32,24 @@ public class SidebarController {
     @FXML
     private Button logoutButton;
 
-    // Flag to simulate admin role - in a real app this would come from authentication system
+    // Flags to simulate roles - in a real app this would come from authentication system
     private boolean isAdmin = true;
+    private boolean isManager = true;
+    private boolean isAnalyst = true;
 
     @FXML
     private void initialize() {
         System.out.println("SidebarController initialized");
         
-        // Hide Accounts button for non-admin users
+        // Hide buttons based on roles
         accountsButton.setVisible(isAdmin);
         accountsButton.setManaged(isAdmin);
+        
+        reviewRecommendationsButton.setVisible(isManager);
+        reviewRecommendationsButton.setManaged(isManager);
+        
+        investmentRecommendationsButton.setVisible(isAnalyst);
+        investmentRecommendationsButton.setManaged(isAnalyst);
         
         // Tambahkan styling atau event listener lain jika perlu
         // Contoh: Menandai tombol aktif (misal Dashboard awalnya aktif)
@@ -50,6 +64,17 @@ public class SidebarController {
             Main.loadDashboardScene();
         } catch (IOException e) {
             System.err.println("Error loading Dashboard scene: " + e.getMessage());
+        }
+    }
+
+    @FXML
+    private void handleProductsAction(ActionEvent event) {
+        System.out.println("Products button clicked");
+        setActiveButton(productsButton);
+        try {
+            Main.loadProductsScene();
+        } catch (IOException e) {
+            System.err.println("Error loading Products scene: " + e.getMessage());
         }
     }
 
@@ -83,6 +108,28 @@ public class SidebarController {
             Main.loadPerformanceScene();
         } catch (IOException e) {
             System.err.println("Error loading Performance scene: " + e.getMessage());
+        }
+    }
+
+    @FXML
+    private void handleReviewRecommendationsAction(ActionEvent event) {
+        System.out.println("Review Recommendations button clicked");
+        setActiveButton(reviewRecommendationsButton);
+        try {
+            Main.loadReviewRecommendationsScene();
+        } catch (IOException e) {
+            System.err.println("Error loading Review Recommendations scene: " + e.getMessage());
+        }
+    }
+
+    @FXML
+    private void handleInvestmentRecommendationsAction(ActionEvent event) {
+        System.out.println("Investment Recommendations button clicked");
+        setActiveButton(investmentRecommendationsButton);
+        try {
+            Main.loadInvestmentRecommendationsScene();
+        } catch (IOException e) {
+            System.err.println("Error loading Investment Recommendations scene: " + e.getMessage());
         }
     }
 
@@ -143,6 +190,10 @@ public class SidebarController {
         return dashboardButton;
     }
     
+    public Button getProductsButton() {
+        return productsButton;
+    }
+    
     public Button getPortfoliosButton() {
         return portfoliosButton;
     }
@@ -165,9 +216,12 @@ public class SidebarController {
     public void setActiveButton(Button activeButton) {
         // Reset style semua tombol navigasi utama
         resetButtonStyles(dashboardButton);
+        resetButtonStyles(productsButton);
         resetButtonStyles(portfoliosButton);
         resetButtonStyles(transactionsButton);
         resetButtonStyles(performanceButton);
+        resetButtonStyles(reviewRecommendationsButton);
+        resetButtonStyles(investmentRecommendationsButton);
         resetButtonStyles(accountsButton);
         // Mungkin juga untuk supportButton jika dianggap bagian dari navigasi utama
 

@@ -73,6 +73,20 @@ public class Main extends Application {
         }
     }
     
+    public static void loadProductsScene() throws IOException {
+        if (primaryStageRef != null) {
+            Parent root = FXMLLoader.load(Main.class.getResource("views/ProductsView.fxml"));
+            Scene scene = new Scene(root, 1280, 720);
+            
+            // Load CSS
+            String css = Main.class.getResource("styles/application.css").toExternalForm();
+            scene.getStylesheets().add(css);
+            
+            primaryStageRef.setScene(scene);
+            primaryStageRef.setTitle("Vanguard Asset Management - Products");
+        }
+    }
+    
     public static void loadPortfolioScene() throws IOException {
         if (primaryStageRef != null) {
             Parent root = FXMLLoader.load(Main.class.getResource("views/PortfolioView.fxml"));
@@ -154,6 +168,34 @@ public class Main extends Application {
             
             primaryStageRef.setScene(scene);
             primaryStageRef.setTitle("Vanguard Asset Management - Support");
+        }
+    }
+
+    public static void loadReviewRecommendationsScene() throws IOException {
+        if (primaryStageRef != null) {
+            Parent root = FXMLLoader.load(Main.class.getResource("views/ReviewRecommendationsView.fxml"));
+            Scene scene = new Scene(root, 1280, 720);
+            
+            // Load CSS
+            String css = Main.class.getResource("styles/application.css").toExternalForm();
+            scene.getStylesheets().add(css);
+            
+            primaryStageRef.setScene(scene);
+            primaryStageRef.setTitle("Vanguard Asset Management - Review Recommendations");
+        }
+    }
+
+    public static void loadInvestmentRecommendationsScene() throws IOException {
+        if (primaryStageRef != null) {
+            Parent root = FXMLLoader.load(Main.class.getResource("views/InvestmentRecommendationsView.fxml"));
+            Scene scene = new Scene(root, 1280, 720);
+            
+            // Load CSS
+            String css = Main.class.getResource("styles/application.css").toExternalForm();
+            scene.getStylesheets().add(css);
+            
+            primaryStageRef.setScene(scene);
+            primaryStageRef.setTitle("Vanguard Asset Management - Investment Recommendations");
         }
     }
 }

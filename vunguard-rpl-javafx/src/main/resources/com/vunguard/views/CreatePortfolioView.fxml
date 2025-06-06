@@ -4,6 +4,7 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
@@ -12,72 +13,69 @@
 <ScrollPane fx:id="scrollPane" fitToWidth="true" fitToHeight="true" 
            style="-fx-background: #12121A; -fx-background-color: #12121A;" 
            hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
-           prefWidth="600.0" prefHeight="500.0"
+           prefWidth="600.0" prefHeight="400.0"
            xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/21">
     
     <content>
-        <VBox fx:id="rootPane" alignment="CENTER" spacing="20.0" 
-              style="-fx-background-color: #12121A; -fx-padding: 30;" 
-              minWidth="550.0" prefHeight="450.0">
+        <VBox fx:id="rootPane" alignment="TOP_LEFT" spacing="25.0" 
+              style="-fx-background-color: #12121A; -fx-padding: 40;" 
+              minWidth="520.0" prefHeight="350.0">
             <children>
-                <Label text="Create New Portfolio" 
-                       style="-fx-text-fill: white; -fx-font-family: 'Inter 18pt'; -fx-font-size: 20px; -fx-font-weight: bold;" />
-
-                <Label text="Enter portfolio details to create a new investment portfolio" 
-                       style="-fx-text-fill: #A0A0A0; -fx-font-family: 'Inter 18pt'; -fx-font-size: 14px;" />
-
-                <VBox alignment="CENTER_LEFT" maxWidth="450.0" minWidth="400.0" spacing="15.0" 
-                      style="-fx-background-color: #1E1E2C; -fx-padding: 30; -fx-background-radius: 10;">
+                <!-- Header -->
+                <VBox spacing="8">
                     <children>
+                        <Label text="Create Portfolio" 
+                               style="-fx-text-fill: white; -fx-font-size: 28px; -fx-font-weight: bold;" />
+                        <Label text="Create a new investment portfolio to manage your assets." 
+                               style="-fx-text-fill: #A0A0A0; -fx-font-size: 14px;" />
+                    </children>
+                </VBox>
 
-                        <Label style="-fx-text-fill: #B0B0B0; -fx-font-family: 'Inter 18pt'; -fx-font-size: 14px;" text="Portfolio Name *" />
-                        <TextField fx:id="nameField" promptText="Enter portfolio name" 
-                                  style="-fx-background-color: #2A2A3A; -fx-text-fill: white; -fx-font-family: 'Inter 18pt'; -fx-background-radius: 5; -fx-border-color: #3A3A4A; -fx-border-radius: 5; -fx-padding: 10; -fx-font-size: 14px;" 
-                                  prefHeight="40.0" />
+                <!-- Form Section -->
+                <VBox spacing="20.0" style="-fx-padding: 20 0 0 0;">
+                    <children>
+                        <Label text="New Portfolio" 
+                               style="-fx-text-fill: white; -fx-font-size: 20px; -fx-font-weight: bold;" />
+                        <Label text="Enter the details for the new portfolio." 
+                               style="-fx-text-fill: #A0A0A0; -fx-font-size: 14px;" />
 
-                        <Label style="-fx-text-fill: #B0B0B0; -fx-font-family: 'Inter 18pt'; -fx-font-size: 14px;" text="Initial Asset Value ($)" />
-                        <TextField fx:id="assetValueField" promptText="0.00" 
-                                  style="-fx-background-color: #2A2A3A; -fx-text-fill: white; -fx-font-family: 'Inter 18pt'; -fx-background-radius: 5; -fx-border-color: #3A3A4A; -fx-border-radius: 5; -fx-padding: 10; -fx-font-size: 14px;" 
-                                  prefHeight="40.0" />
-                    
-                        <Label style="-fx-text-fill: #B0B0B0; -fx-font-family: 'Inter 18pt'; -fx-font-size: 14px;" text="Initial Cash Balance ($)" />
-                        <TextField fx:id="cashBalanceField" promptText="0.00" 
-                                  style="-fx-background-color: #2A2A3A; -fx-text-fill: white; -fx-font-family: 'Inter 18pt'; -fx-background-radius: 5; -fx-border-color: #3A3A4A; -fx-border-radius: 5; -fx-padding: 10; -fx-font-size: 14px;" 
-                                  prefHeight="40.0" />
+                        <!-- Portfolio Name -->
+                        <VBox spacing="8">
+                            <children>
+                                <Label text="Portfolio Name" 
+                                       style="-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: 500;" />
+                                <TextField fx:id="nameField" promptText="Enter portfolio name" 
+                                          style="-fx-background-color: #2A2A3A; -fx-text-fill: white; -fx-background-radius: 6; -fx-border-color: #3A3A4A; -fx-border-radius: 6; -fx-padding: 12; -fx-font-size: 14px; -fx-prompt-text-fill: #A0A0A0;" 
+                                          prefHeight="44.0" />
+                            </children>
+                        </VBox>
 
-                        <Label style="-fx-text-fill: #B0B0B0; -fx-font-family: 'Inter 18pt'; -fx-font-size: 14px;" text="Expected Return (%)" />
-                        <TextField fx:id="returnField" promptText="0.00" 
-                                      style="-fx-background-color: #2A2A3A; -fx-text-fill: white; -fx-font-family: 'Inter 18pt'; -fx-background-radius: 5; -fx-border-color: #3A3A4A; -fx-border-radius: 5; -fx-padding: 10; -fx-font-size: 14px;" 
-                                      prefHeight="40.0" />
+                        <!-- Description -->
+                        <VBox spacing="8">
+                            <children>
+                                <Label text="Description (Optional)" 
+                                       style="-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: 500;" />
+                                <TextArea fx:id="descriptionField" promptText="Enter portfolio description" 
+                                          style="-fx-background-color: #2A2A3A; -fx-text-fill: white; -fx-background-radius: 6; -fx-border-color: #3A3A4A; -fx-border-radius: 6; -fx-padding: 12; -fx-font-size: 14px; -fx-prompt-text-fill: #A0A0A0;" 
+                                          prefHeight="80.0" wrapText="true" />
+                            </children>
+                        </VBox>
 
-                        <Label style="-fx-text-fill: #B0B0B0; -fx-font-family: 'Inter 18pt'; -fx-font-size: 14px;" text="Number of Assets" />
-                        <TextField fx:id="assetsField" promptText="0" 
-                                      style="-fx-background-color: #2A2A3A; -fx-text-fill: white; -fx-font-family: 'Inter 18pt'; -fx-background-radius: 5; -fx-border-color: #3A3A4A; -fx-border-radius: 5; -fx-padding: 10; -fx-font-size: 14px;" 
-                                      prefHeight="40.0" />
-
-                        <Label style="-fx-text-fill: #A0A0A0; -fx-font-family: 'Inter 18pt'; -fx-font-size: 12px; -fx-padding: 10 0 0 0;" 
-                               text="Create a new investment portfolio to track your assets and performance." />
-
-                        <HBox spacing="10.0" alignment="CENTER" style="-fx-padding: 10 0 0 0;">
+                        <!-- Buttons -->
+                        <HBox spacing="12.0" alignment="CENTER_RIGHT" style="-fx-padding: 20 0 0 0;">
                             <children>
                                 <Button fx:id="cancelButton" text="Cancel" onAction="#handleCancelAction"
-                                        style="-fx-background-color: transparent; -fx-border-color: #6B7280; -fx-border-radius: 5; -fx-text-fill: #E5E7EB; -fx-font-family: 'Inter 18pt'; -fx-font-weight: bold; -fx-padding: 12 20; -fx-background-radius: 5; -fx-font-size: 14px;" 
-                                        prefHeight="45.0" prefWidth="120.0" />
+                                        style="-fx-background-color: transparent; -fx-border-color: #6B7280; -fx-border-radius: 6; -fx-text-fill: #E5E7EB; -fx-font-weight: 500; -fx-padding: 12 24; -fx-background-radius: 6; -fx-font-size: 14px;" 
+                                        prefHeight="44.0" />
                                 
                                 <Button fx:id="createButton" defaultButton="true" text="Create Portfolio" onAction="#handleCreateAction"
-                                        style="-fx-background-color: #4ADE80; -fx-text-fill: #0F172A; -fx-font-family: 'Inter 18pt'; -fx-font-weight: bold; -fx-padding: 12 20; -fx-background-radius: 5; -fx-font-size: 14px;" 
-                                        prefHeight="45.0" prefWidth="150.0" />
+                                        style="-fx-background-color: #10B981; -fx-text-fill: white; -fx-font-weight: 600; -fx-padding: 12 24; -fx-background-radius: 6; -fx-font-size: 14px;" 
+                                        prefHeight="44.0" />
                             </children>
                         </HBox>
                     </children>
                 </VBox>
-
-                <!-- Small spacing at the bottom -->
-                <Region prefHeight="15" />
             </children>
-            <padding>
-                <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
-            </padding>
         </VBox>
     </content>
 </ScrollPane>

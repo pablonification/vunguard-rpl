@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.vunguard.controllers.RecommendationDetailsController" 
+      spacing="20.0" style="-fx-background-color: #2A2A3A; -fx-background-radius: 8;" prefWidth="700.0" prefHeight="600.0">
+    <padding>
+        <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
+    </padding>
+    
+    <!-- Header -->
+    <HBox alignment="CENTER_LEFT">
+        <Label text="Recommendation Details" style="-fx-font-family: 'Inter'; -fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #FFFFFF;" />
+        <Region HBox.hgrow="ALWAYS" />
+        <Button fx:id="closeButton" onAction="#handleClose" text="✕" style="-fx-background-color: transparent; -fx-text-fill: #A0A0A0; -fx-font-size: 16px; -fx-padding: 5;" />
+    </HBox>
+    
+    <Label fx:id="recommendationIdLabel" text="Full details for recommendation #2" style="-fx-font-family: 'Inter'; -fx-font-size: 14px; -fx-text-fill: #A0A0A0;" />
+    
+    <!-- Content -->
+    <ScrollPane fitToWidth="true" style="-fx-background: transparent; -fx-background-color: transparent;">
+        <VBox spacing="20.0">
+            <!-- Basic Information Grid -->
+            <GridPane hgap="20.0" vgap="15.0">
+                <columnConstraints>
+                    <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="220.0" />
+                    <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="220.0" />
+                    <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="220.0" />
+                </columnConstraints>
+                
+                <!-- Row 1 -->
+                <VBox spacing="5.0" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                    <Label text="Product" style="-fx-font-family: 'Inter'; -fx-font-size: 12px; -fx-text-fill: #A0A0A0;" />
+                    <Label fx:id="productLabel" text="Real Estate Income Trust" style="-fx-font-family: 'Inter'; -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #FFFFFF;" />
+                </VBox>
+                
+                <VBox spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                    <Label text="Analyst" style="-fx-font-family: 'Inter'; -fx-font-size: 12px; -fx-text-fill: #A0A0A0;" />
+                    <Label fx:id="analystLabel" text="budi_analyst" style="-fx-font-family: 'Inter'; -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #FFFFFF;" />
+                </VBox>
+                
+                <VBox spacing="5.0" GridPane.columnIndex="2" GridPane.rowIndex="0">
+                    <Label text="Confidence" style="-fx-font-family: 'Inter'; -fx-font-size: 12px; -fx-text-fill: #A0A0A0;" />
+                    <Label fx:id="confidenceLabel" text="★★★" style="-fx-font-family: 'Inter'; -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #FFD700;" />
+                </VBox>
+                
+                <!-- Row 2 -->
+                <VBox spacing="5.0" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                    <Label text="Recommendation Type" style="-fx-font-family: 'Inter'; -fx-font-size: 12px; -fx-text-fill: #A0A0A0;" />
+                    <Label fx:id="typeLabel" text="SELL" style="-fx-font-family: 'Inter'; -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #FFFFFF; -fx-background-color: #EF4444; -fx-background-radius: 4; -fx-padding: 4 8;" />
+                </VBox>
+                
+                <VBox spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                    <Label text="Status" style="-fx-font-family: 'Inter'; -fx-font-size: 12px; -fx-text-fill: #A0A0A0;" />
+                    <Label fx:id="statusLabel" text="REJECTED" style="-fx-font-family: 'Inter'; -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #FFFFFF; -fx-background-color: #EF4444; -fx-background-radius: 4; -fx-padding: 4 8;" />
+                </VBox>
+                
+                <VBox spacing="5.0" GridPane.columnIndex="2" GridPane.rowIndex="1">
+                    <Label text="Timeframe" style="-fx-font-family: 'Inter'; -fx-font-size: 12px; -fx-text-fill: #A0A0A0;" />
+                    <Label fx:id="timeframeLabel" text="medium term" style="-fx-font-family: 'Inter'; -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #FFFFFF;" />
+                </VBox>
+                
+                <!-- Row 3 -->
+                <VBox spacing="5.0" GridPane.columnIndex="0" GridPane.rowIndex="2">
+                    <Label text="Current Price" style="-fx-font-family: 'Inter'; -fx-font-size: 12px; -fx-text-fill: #A0A0A0;" />
+                    <Label fx:id="currentPriceLabel" text="10.00" style="-fx-font-family: 'Inter'; -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #FFFFFF;" />
+                </VBox>
+                
+                <VBox spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                    <Label text="Target Price" style="-fx-font-family: 'Inter'; -fx-font-size: 12px; -fx-text-fill: #A0A0A0;" />
+                    <Label fx:id="targetPriceLabel" text="15.00" style="-fx-font-family: 'Inter'; -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #FFFFFF;" />
+                </VBox>
+                
+                <VBox spacing="5.0" GridPane.columnIndex="2" GridPane.rowIndex="2">
+                    <Label text="Price Change" style="-fx-font-family: 'Inter'; -fx-font-size: 12px; -fx-text-fill: #A0A0A0;" />
+                    <Label fx:id="priceChangeLabel" text="50.00 percent" style="-fx-font-family: 'Inter'; -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #22C55E;" />
+                </VBox>
+            </GridPane>
+            
+            <!-- Rationale Section -->
+            <VBox spacing="8.0">
+                <Label text="Rationale" style="-fx-font-family: 'Inter'; -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #FFFFFF;" />
+                <TextArea fx:id="rationaleTextArea" text="" wrapText="true" editable="false"
+                         style="-fx-background-color: #1E1E2C; -fx-text-fill: #FFFFFF; -fx-font-family: 'Inter'; -fx-control-inner-background: #1E1E2C;" 
+                         prefRowCount="3" />
+            </VBox>
+            
+            <!-- Analysis Sections -->
+            <GridPane hgap="15.0" vgap="15.0">
+                <columnConstraints>
+                    <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="200.0" />
+                    <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="200.0" />
+                    <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="200.0" />
+                </columnConstraints>
+                
+                <!-- Technical Analysis -->
+                <VBox spacing="8.0" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                    <Label text="Technical Analysis" style="-fx-font-family: 'Inter'; -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #FFFFFF;" />
+                    <TextArea fx:id="technicalAnalysisTextArea" text="" wrapText="true" editable="false"
+                             style="-fx-background-color: #1E1E2C; -fx-text-fill: #FFFFFF; -fx-font-family: 'Inter'; -fx-control-inner-background: #1E1E2C;" 
+                             prefRowCount="4" prefWidth="200.0" />
+                </VBox>
+                
+                <!-- Fundamental Analysis -->
+                <VBox spacing="8.0" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                    <Label text="Fundamental Analysis" style="-fx-font-family: 'Inter'; -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #FFFFFF;" />
+                    <TextArea fx:id="fundamentalAnalysisTextArea" text="" wrapText="true" editable="false"
+                             style="-fx-background-color: #1E1E2C; -fx-text-fill: #FFFFFF; -fx-font-family: 'Inter'; -fx-control-inner-background: #1E1E2C;" 
+                             prefRowCount="4" prefWidth="200.0" />
+                </VBox>
+                
+                <!-- Risks -->
+                <VBox spacing="8.0" GridPane.columnIndex="2" GridPane.rowIndex="0">
+                    <Label text="Risks" style="-fx-font-family: 'Inter'; -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #FFFFFF;" />
+                    <TextArea fx:id="risksTextArea" text="" wrapText="true" editable="false"
+                             style="-fx-background-color: #1E1E2C; -fx-text-fill: #FFFFFF; -fx-font-family: 'Inter'; -fx-control-inner-background: #1E1E2C;" 
+                             prefRowCount="4" prefWidth="200.0" />
+                </VBox>
+            </GridPane>
+            
+            <!-- Timestamps -->
+            <HBox spacing="20.0">
+                <VBox spacing="5.0">
+                    <Label text="Created:" style="-fx-font-family: 'Inter'; -fx-font-size: 12px; -fx-text-fill: #A0A0A0;" />
+                    <Label fx:id="createdLabel" text="May 12th, 2025 9:52 PM" style="-fx-font-family: 'Inter'; -fx-font-size: 14px; -fx-text-fill: #FFFFFF;" />
+                </VBox>
+                <VBox spacing="5.0">
+                    <Label text="Updated:" style="-fx-font-family: 'Inter'; -fx-font-size: 12px; -fx-text-fill: #A0A0A0;" />
+                    <Label fx:id="updatedLabel" text="May 12th, 2025 9:55 PM" style="-fx-font-family: 'Inter'; -fx-font-size: 14px; -fx-text-fill: #FFFFFF;" />
+                </VBox>
+                <VBox spacing="5.0">
+                    <Label text="Implemented:" style="-fx-font-family: 'Inter'; -fx-font-size: 12px; -fx-text-fill: #A0A0A0;" />
+                    <Label fx:id="implementedLabel" text="N/A" style="-fx-font-family: 'Inter'; -fx-font-size: 14px; -fx-text-fill: #FFFFFF;" />
+                </VBox>
+            </HBox>
+        </VBox>
+    </ScrollPane>
+    
+    <!-- Action Buttons -->
+    <HBox spacing="15.0" alignment="CENTER_RIGHT">
+        <Button fx:id="closeFooterButton" onAction="#handleClose" text="Close" 
+                style="-fx-background-color: #4A4A5A; -fx-text-fill: #FFFFFF; -fx-font-family: 'Inter'; -fx-background-radius: 6; -fx-padding: 8 16;" />
+    </HBox>
+</VBox> 

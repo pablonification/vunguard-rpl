@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<ScrollPane xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" 
+            style="-fx-background: #1E1E2C; -fx-background-color: #1E1E2C;">
+    <content>
+        <VBox spacing="0" style="-fx-background-color: #1E1E2C;">
+            <children>
+                <!-- Main Content Container -->
+                <VBox spacing="20.0" 
+                      style="-fx-background-color: #2A2A3A; -fx-padding: 30; -fx-background-radius: 10;">
+                    <children>
+                        <!-- Header Section -->
+                        <Label style="-fx-text-fill: #E5E7EB; -fx-font-family: 'Inter 18pt'; -fx-font-size: 24px; -fx-font-weight: bold;" 
+                               text="Top Up Funds" />
+                        <Label style="-fx-text-fill: #A0A0A0; -fx-font-family: 'Inter 18pt'; -fx-font-size: 12px; -fx-padding: 0 0 10 0;" 
+                               text="Add funds to your selected portfolio's cash balance." />
+
+                        <!-- Portfolio Selection -->
+                        <Label style="-fx-text-fill: #E5E7EB; -fx-font-family: 'Inter 18pt'; -fx-font-size: 14px; -fx-font-weight: bold;" 
+                               text="Select Portfolio *" />
+                        <ComboBox fx:id="portfolioComboBox" promptText="Choose a portfolio to add funds to" 
+                                 style="-fx-background-color: #1E1E2C; -fx-text-fill: white; -fx-background-radius: 5; -fx-border-color: #3A3A4A; -fx-border-radius: 5; -fx-padding: 8; -fx-font-size: 14px; -fx-prompt-text-fill: #A0A0A0;" 
+                                 prefHeight="40.0" prefWidth="400.0" />
+
+                        <!-- Amount Input -->
+                        <Label style="-fx-text-fill: #E5E7EB; -fx-font-family: 'Inter 18pt'; -fx-font-size: 14px; -fx-font-weight: bold;" 
+                               text="Amount ($) *" />
+                        <TextField fx:id="amountField" promptText="Enter amount to add (e.g., 1000.00)" 
+                                  style="-fx-background-color: #1E1E2C; -fx-text-fill: white; -fx-font-family: 'Inter 18pt'; -fx-background-radius: 5; -fx-border-color: #3A3A4A; -fx-border-radius: 5; -fx-padding: 10; -fx-font-size: 14px; -fx-prompt-text-fill: #A0A0A0;" 
+                                  prefHeight="40.0" />
+
+                        <!-- Description -->
+                        <Label style="-fx-text-fill: #E5E7EB; -fx-font-family: 'Inter 18pt'; -fx-font-size: 14px; -fx-font-weight: bold;" 
+                               text="Description (Optional)" />
+                        <TextField fx:id="descriptionField" promptText="Enter a description for this deposit" 
+                                  style="-fx-background-color: #1E1E2C; -fx-text-fill: white; -fx-font-family: 'Inter 18pt'; -fx-background-radius: 5; -fx-border-color: #3A3A4A; -fx-border-radius: 5; -fx-padding: 10; -fx-font-size: 14px; -fx-prompt-text-fill: #A0A0A0;" 
+                                  prefHeight="40.0" />
+
+                        <!-- Current Portfolio Info (shows selected portfolio's current cash balance) -->
+                        <VBox fx:id="portfolioInfoSection" spacing="5" visible="false" 
+                              style="-fx-background-color: #1E1E2C; -fx-padding: 15; -fx-background-radius: 8; -fx-border-color: #3A3A4A; -fx-border-radius: 8;">
+                            <children>
+                                <Label style="-fx-text-fill: #60A5FA; -fx-font-family: 'Inter 18pt'; -fx-font-size: 13px; -fx-font-weight: bold;" 
+                                       text="Current Portfolio Information:" />
+                                <Label fx:id="currentCashLabel" style="-fx-text-fill: #E5E7EB; -fx-font-family: 'Inter 18pt'; -fx-font-size: 12px;" 
+                                       text="Current Cash Balance: $0.00" />
+                                <Label fx:id="newCashLabel" style="-fx-text-fill: #4ADE80; -fx-font-family: 'Inter 18pt'; -fx-font-size: 12px; -fx-font-weight: bold;" 
+                                       text="New Cash Balance: $0.00" />
+                            </children>
+                        </VBox>
+
+                        <!-- Buttons -->
+                        <HBox spacing="10.0" alignment="CENTER" style="-fx-padding: 15 0 0 0;">
+                            <children>
+                                <Button fx:id="cancelButton" text="Cancel" onAction="#handleCancelAction"
+                                        style="-fx-background-color: #374151; -fx-text-fill: white; -fx-font-family: 'Inter 18pt'; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 10 20; -fx-cursor: hand;"
+                                        prefWidth="120.0" prefHeight="40.0" />
+                                <Button fx:id="topUpButton" text="Add Funds" onAction="#handleTopUpAction"
+                                        style="-fx-background-color: #10B981; -fx-text-fill: white; -fx-font-family: 'Inter 18pt'; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 5; -fx-padding: 10 20; -fx-cursor: hand;"
+                                        prefWidth="120.0" prefHeight="40.0" />
+                            </children>
+                        </HBox>
+
+                        <!-- Note -->
+                        <Label style="-fx-text-fill: #6B7280; -fx-font-family: 'Inter 18pt'; -fx-font-size: 11px; -fx-padding: 10 0 0 0;" 
+                               text="Note: Funds will be added to the selected portfolio's cash balance and a deposit transaction will be recorded." />
+                    </children>
+                </VBox>
+            </children>
+        </VBox>
+    </content>
+</ScrollPane>

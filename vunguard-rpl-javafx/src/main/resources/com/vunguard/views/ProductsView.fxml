@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/21" 
+            fx:controller="com.vunguard.controllers.ProductsController"
+            prefHeight="768.0" prefWidth="1366.0" style="-fx-background-color: #12121A;">
+    <left>
+        <fx:include fx:id="sidebarView" source="SidebarView.fxml" />
+    </left>
+    <center>
+        <ScrollPane fx:id="scrollPane" fitToWidth="true" vbarPolicy="AS_NEEDED" hbarPolicy="NEVER" 
+                   style="-fx-background-color: transparent; -fx-background: transparent; -fx-padding: 0; -fx-background-insets: 0;">
+            <content>
+                <VBox fx:id="contentArea" alignment="TOP_LEFT" spacing="20.0" style="-fx-background-color: #1E1E2C; -fx-padding: 30;">
+                    <children>
+                        <!-- Header -->
+                        <Label text="Products" style="-fx-font-size: 28px; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                        <Label text="Manage your investment products and their details." 
+                               style="-fx-text-fill: #A0A0A0; -fx-font-size: 14px;"/>
+                        
+                        <!-- The rest of the UI will be built programmatically in the controller -->
+                    </children>
+                </VBox>
+            </content>
+        </ScrollPane>
+    </center>
+</BorderPane> 

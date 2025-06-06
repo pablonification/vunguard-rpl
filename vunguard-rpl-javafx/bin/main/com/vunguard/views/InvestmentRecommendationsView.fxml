@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<BorderPane xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.vunguard.controllers.InvestmentRecommendationsController" style="-fx-background-color: #1E1E2C;">
+    <left>
+        <fx:include fx:id="sidebarView" source="SidebarView.fxml" />
+    </left>
+    
+    <center>
+        <VBox spacing="20.0" style="-fx-background-color: #1E1E2C;" VBox.vgrow="ALWAYS">
+            <padding>
+                <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
+            </padding>
+            
+            <!-- Header Section -->
+            <VBox spacing="10.0">
+                <Label text="Investment Recommendations" style="-fx-font-family: 'Inter'; -fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #FFFFFF;" />
+                <Label text="Create and manage investment recommendations for portfolio managers." style="-fx-font-family: 'Inter'; -fx-font-size: 14px; -fx-text-fill: #A0A0A0;" />
+            </VBox>
+            
+            <!-- Actions Section -->
+            <HBox spacing="15.0" alignment="CENTER_LEFT">
+                <Label text="Your Recommendations" style="-fx-font-family: 'Inter'; -fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #FFFFFF;" />
+                
+                <Region HBox.hgrow="ALWAYS" />
+                
+                <Label text="Filter by Status:" style="-fx-font-family: 'Inter'; -fx-font-size: 14px; -fx-text-fill: #A0A0A0;" />
+                <ComboBox fx:id="statusFilter" style="-fx-background-color: #2A2A3A; -fx-text-fill: #FFFFFF; -fx-font-family: 'Inter';" prefWidth="150.0" />
+                
+                <Button fx:id="newRecommendationButton" onAction="#handleCreateRecommendation" text="+ New Recommendation" style="-fx-background-color: #22C55E; -fx-text-fill: #FFFFFF; -fx-font-family: 'Inter'; -fx-font-weight: bold; -fx-background-radius: 6; -fx-padding: 8 16;" />
+            </HBox>
+            
+            <!-- Table Section -->
+            <VBox fx:id="tableContainer" spacing="0.0" style="-fx-background-color: #2A2A3A; -fx-background-radius: 8;" VBox.vgrow="ALWAYS">
+                <padding>
+                    <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+                </padding>
+            </VBox>
+        </VBox>
+    </center>
+</BorderPane> 

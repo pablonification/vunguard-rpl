@@ -5,12 +5,16 @@ import com.vunguard.models.Transaction;
 import com.vunguard.models.User;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.layout.Region;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import java.text.NumberFormat;
 import java.util.Locale;
 import java.util.List;
@@ -22,31 +26,55 @@ public class PerformanceController {
     private VBox contentArea;
 
     @FXML
-    private Button refreshButton;
+    private TabPane tabPane;
+
+    @FXML
+    private Tab overviewTab;
+
+    @FXML
+    private Tab benchmarkTab;
+
+    @FXML
+    private Tab assetAllocationTab;
 
     @FXML
     private ComboBox<String> timeRangeFilter;
 
     @FXML
-    private ComboBox<String> portfolioFilter;
+    private Button generateReportButton;
+
+    // Overview Tab content
+    @FXML
+    private VBox overviewContent;
 
     @FXML
-    private VBox summarySection;
+    private VBox performanceChartContainer;
 
     @FXML
-    private VBox chartsSection;
+    private VBox returnsChartContainer;
+
+    // Benchmark Tab content
+    @FXML
+    private VBox benchmarkContent;
 
     @FXML
-    private VBox detailsSection;
+    private VBox benchmarkTableContainer;
+
+    // Asset Allocation Tab content
+    @FXML
+    private VBox allocationContent;
+
+    @FXML
+    private VBox assetAllocationChartContainer;
+
+    @FXML
+    private VBox riskAllocationChartContainer;
 
     @FXML
     private SidebarController sidebarViewController;
 
-    // Data containers using existing models
-    private List<Portfolio> portfolios = new ArrayList<>();
-    private List<Transaction> transactions = new ArrayList<>();
-    private User currentUser;
-    private NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
+    // Data for demo
+    private final ObservableList<BenchmarkData> benchmarkDataList = FXCollections.observableArrayList();
 
     @FXML
     private void initialize() {
@@ -63,481 +91,224 @@ public class PerformanceController {
             System.out.println("SidebarView Controller NOT injected.");
         }
 
-        // Initialize empty data
-        initializeEmptyData();
-
         // Setup filters
         setupFilters();
 
-        // Setup button events
-        refreshButton.setOnAction(event -> {
-            System.out.println("Refresh Data button clicked");
-            refreshPerformanceData();
-        });
+        // Setup buttons
+        setupButtons();
 
-        // Build the performance dashboard
-        buildPerformanceDashboard();
-    }
+        // Initialize tab content
+        setupTabContent();
 
-    private void initializeEmptyData() {
-        // Clear all data containers
-        portfolios.clear();
-        transactions.clear();
-        currentUser = null;
+        // Load sample data
+        loadSampleData();
     }
 
     private void setupFilters() {
         // Time range options
-        timeRangeFilter.getItems().addAll("1 Day", "1 Week", "1 Month", "3 Months", "6 Months", "1 Year", "All Time");
-        timeRangeFilter.setValue("1 Month");
+        timeRangeFilter.getItems().addAll("1 Week", "1 Month", "3 Months", "6 Months", "1 Year", "All Time");
+        timeRangeFilter.setValue("All Time");
 
-        // Portfolio options - start with default
-        portfolioFilter.getItems().addAll("All Portfolios");
-        portfolioFilter.setValue("All Portfolios");
-
-        // Add portfolio names to filter when portfolios are loaded
-        updatePortfolioFilter();
-
-        // Add listeners for filter changes
         timeRangeFilter.valueProperty().addListener((obs, oldVal, newVal) -> {
             System.out.println("Time range changed to: " + newVal);
-            updatePerformanceData();
-        });
-
-        portfolioFilter.valueProperty().addListener((obs, oldVal, newVal) -> {
-            System.out.println("Portfolio filter changed to: " + newVal);
-            updatePerformanceData();
+            refreshData();
         });
     }
 
-    private void updatePortfolioFilter() {
-        // Clear and rebuild portfolio filter options
-        String currentSelection = portfolioFilter.getValue();
-        portfolioFilter.getItems().clear();
-        portfolioFilter.getItems().add("All Portfolios");
-        
-        for (Portfolio portfolio : portfolios) {
-            portfolioFilter.getItems().add(portfolio.getName());
-        }
-        
-        // Restore selection if still valid
-        if (portfolioFilter.getItems().contains(currentSelection)) {
-            portfolioFilter.setValue(currentSelection);
-        } else {
-            portfolioFilter.setValue("All Portfolios");
-        }
+    private void setupButtons() {
+        generateReportButton.setOnAction(this::handleGenerateReport);
     }
 
-    private void buildPerformanceDashboard() {
-        buildSummaryCards();
-        buildChartsSection();
-        buildDetailsSection();
+    private void setupTabContent() {
+        // Setup Overview tab
+        setupOverviewTab();
+
+        // Setup Benchmark Comparison tab
+        setupBenchmarkTab();
+
+        // Setup Asset Allocation tab
+        setupAssetAllocationTab();
     }
 
-    private void buildSummaryCards() {
-        summarySection.getChildren().clear();
-
-        Label summaryTitle = new Label("Performance Overview");
-        summaryTitle.setStyle("-fx-font-size: 20px; -fx-text-fill: white; -fx-font-weight: bold;");
-        summarySection.getChildren().add(summaryTitle);
-
-        // Calculate performance metrics from portfolios
-        PerformanceMetrics metrics = calculatePerformanceMetrics();
-
-        // Create first row of cards
-        HBox topRow = new HBox(20);
-        VBox totalReturn = createPerformanceCard("Total Return", 
-                                               metrics.totalReturnValue, 
-                                               metrics.totalReturnPercent, 
-                                               getReturnColor(metrics.totalReturnValue));
-        VBox avgReturn = createPerformanceCard("Average Return", 
-                                             metrics.averageReturn, 
-                                             "Annualized", 
-                                             getReturnColor(metrics.averageReturn));
-        VBox bestPerformer = createPerformanceCard("Best Performer", 
-                                                 metrics.bestPerformerName, 
-                                                 metrics.bestPerformerReturn, 
-                                                 getReturnColor(metrics.bestPerformerReturn));
-        VBox portfolioCount = createPerformanceCard("Total Portfolios", 
-                                                  String.valueOf(portfolios.size()), 
-                                                  "Active portfolios", 
-                                                  null);
-
-        setEqualGrowth(topRow, totalReturn, avgReturn, bestPerformer, portfolioCount);
-        summarySection.getChildren().add(topRow);
-
-        // Create second row of cards
-        HBox bottomRow = new HBox(20);
-        VBox totalValue = createPerformanceCard("Total Value", 
-                                              metrics.totalPortfolioValue, 
-                                              "All portfolios", 
-                                              null);
-        VBox totalAssets = createPerformanceCard("Total Assets", 
-                                               metrics.totalAssetValue, 
-                                               "Asset value only", 
-                                               null);
-        VBox totalCash = createPerformanceCard("Total Cash", 
-                                             metrics.totalCashBalance, 
-                                             "Available cash", 
-                                             null);
-        VBox assetCount = createPerformanceCard("Total Assets Count", 
-                                              String.valueOf(metrics.totalAssetCount), 
-                                              "Across all portfolios", 
-                                              null);
-
-        setEqualGrowth(bottomRow, totalValue, totalAssets, totalCash, assetCount);
+    private void setupOverviewTab() {
+        // Performance Over Time chart placeholder
+        Label performanceChartLabel = new Label("📈 Performance Over Time Chart");
+        performanceChartLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #A0A0A0; -fx-alignment: center;");
         
-        VBox.setMargin(bottomRow, new Insets(10, 0, 0, 0));
-        summarySection.getChildren().add(bottomRow);
+        Label performanceSubLabel = new Label("Portfolio Value vs Benchmark Value over time");
+        performanceSubLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #707070; -fx-alignment: center;");
+        
+        VBox performancePlaceholder = new VBox(10);
+        performancePlaceholder.setAlignment(Pos.CENTER);
+        performancePlaceholder.getChildren().addAll(performanceChartLabel, performanceSubLabel);
+        
+        performanceChartContainer.getChildren().clear();
+        performanceChartContainer.getChildren().add(performancePlaceholder);
+
+        // Portfolio Returns chart placeholder
+        Label returnsChartLabel = new Label("📊 Portfolio Returns Chart");
+        returnsChartLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #A0A0A0; -fx-alignment: center;");
+        
+        Label returnsSubLabel = new Label("Return (%) vs Benchmark (%) comparison");
+        returnsSubLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #707070; -fx-alignment: center;");
+        
+        VBox returnsPlaceholder = new VBox(10);
+        returnsPlaceholder.setAlignment(Pos.CENTER);
+        returnsPlaceholder.getChildren().addAll(returnsChartLabel, returnsSubLabel);
+        
+        returnsChartContainer.getChildren().clear();
+        returnsChartContainer.getChildren().add(returnsPlaceholder);
     }
 
-    private void buildChartsSection() {
-        chartsSection.getChildren().clear();
-
-        Label chartsTitle = new Label("Performance Charts");
-        chartsTitle.setStyle("-fx-font-size: 20px; -fx-text-fill: white; -fx-font-weight: bold;");
-        chartsSection.getChildren().add(chartsTitle);
-
-        HBox chartsRow = new HBox(20);
+    private void setupBenchmarkTab() {
+        // Create benchmark comparison table
+        TableView<BenchmarkData> benchmarkTable = new TableView<>();
+        benchmarkTable.setItems(benchmarkDataList);
         
-        VBox performanceChart = createChartCard("Portfolio Performance Over Time", 
-                                               "Track your portfolio value and returns", 
-                                               portfolios.isEmpty() ? "No portfolio data available" : 
-                                               "Performance chart for " + portfolios.size() + " portfolios");
-        
-        VBox allocationChart = createChartCard("Asset Allocation", 
-                                              "Current distribution of your investments", 
-                                              portfolios.isEmpty() ? "No allocation data available" :
-                                              "Asset allocation across " + portfolios.size() + " portfolios");
+        // Style the table
+        benchmarkTable.setStyle("-fx-background-color: transparent; -fx-text-fill: white;");
+        benchmarkTable.setPrefHeight(400);
 
-        setEqualGrowth(chartsRow, performanceChart, allocationChart);
-        chartsSection.getChildren().add(chartsRow);
+        // Create columns
+        TableColumn<BenchmarkData, String> portfolioColumn = new TableColumn<>("Portfolio");
+        portfolioColumn.setCellValueFactory(new PropertyValueFactory<>("portfolioName"));
+        portfolioColumn.setPrefWidth(150);
+        portfolioColumn.setStyle("-fx-text-fill: white;");
 
-        HBox chartsRow2 = new HBox(20);
-        
-        VBox returnsChart = createChartCard("Transaction History", 
-                                           "Recent transaction breakdown", 
-                                           transactions.isEmpty() ? "No transaction data available" :
-                                           transactions.size() + " transactions recorded");
-        
-        VBox riskChart = createChartCard("Portfolio Risk Analysis", 
-                                        "Risk-return profile of your portfolios", 
-                                        portfolios.isEmpty() ? "No risk analysis data available" :
-                                        "Risk analysis for " + portfolios.size() + " portfolios");
+        TableColumn<BenchmarkData, String> currentValueColumn = new TableColumn<>("Current Value");
+        currentValueColumn.setCellValueFactory(new PropertyValueFactory<>("currentValue"));
+        currentValueColumn.setPrefWidth(130);
+        currentValueColumn.setStyle("-fx-text-fill: white;");
 
-        setEqualGrowth(chartsRow2, returnsChart, riskChart);
-        
-        VBox.setMargin(chartsRow2, new Insets(10, 0, 0, 0));
-        chartsSection.getChildren().add(chartsRow2);
-    }
+        TableColumn<BenchmarkData, String> initialValueColumn = new TableColumn<>("Initial Value");
+        initialValueColumn.setCellValueFactory(new PropertyValueFactory<>("initialValue"));
+        initialValueColumn.setPrefWidth(130);
+        initialValueColumn.setStyle("-fx-text-fill: white;");
 
-    private void buildDetailsSection() {
-        detailsSection.getChildren().clear();
+        TableColumn<BenchmarkData, String> returnColumn = new TableColumn<>("Return");
+        returnColumn.setCellValueFactory(new PropertyValueFactory<>("returnPercent"));
+        returnColumn.setPrefWidth(100);
+        returnColumn.setStyle("-fx-text-fill: white;");
 
-        Label detailsTitle = new Label("Detailed Performance Metrics");
-        detailsTitle.setStyle("-fx-font-size: 20px; -fx-text-fill: white; -fx-font-weight: bold;");
-        detailsSection.getChildren().add(detailsTitle);
+        TableColumn<BenchmarkData, String> benchmarkColumn = new TableColumn<>("Benchmark");
+        benchmarkColumn.setCellValueFactory(new PropertyValueFactory<>("benchmarkPercent"));
+        benchmarkColumn.setPrefWidth(100);
+        benchmarkColumn.setStyle("-fx-text-fill: white;");
 
-        HBox detailsRow = new HBox(20);
-        
-        VBox portfolioComparison = createDetailCard("Portfolio Comparison", 
-                                                   createPortfolioComparisonContent());
-        
-        VBox recentTransactions = createDetailCard("Recent Transactions", 
-                                                 createRecentTransactionsContent());
+        TableColumn<BenchmarkData, String> differenceColumn = new TableColumn<>("Difference");
+        differenceColumn.setCellValueFactory(new PropertyValueFactory<>("difference"));
+        differenceColumn.setPrefWidth(100);
+        differenceColumn.setStyle("-fx-text-fill: white;");
 
-        setEqualGrowth(detailsRow, portfolioComparison, recentTransactions);
-        detailsSection.getChildren().add(detailsRow);
-    }
+        benchmarkTable.getColumns().addAll(
+            portfolioColumn, currentValueColumn, initialValueColumn, 
+            returnColumn, benchmarkColumn, differenceColumn
+        );
 
-    private VBox createPortfolioComparisonContent() {
-        VBox content = new VBox(10);
-
-        if (portfolios.isEmpty()) {
-            Label emptyLabel = new Label("No portfolio data available");
-            emptyLabel.setStyle("-fx-text-fill: #707070; -fx-font-size: 14px; -fx-padding: 20; -fx-alignment: center;");
-            content.getChildren().add(emptyLabel);
-        } else {
-            for (Portfolio portfolio : portfolios) {
-                HBox row = createPortfolioRow(portfolio);
-                content.getChildren().add(row);
-            }
-        }
-
-        return content;
-    }
-
-    private VBox createRecentTransactionsContent() {
-        VBox content = new VBox(10);
-
-        if (transactions.isEmpty()) {
-            Label emptyLabel = new Label("No transaction data available");
-            emptyLabel.setStyle("-fx-text-fill: #707070; -fx-font-size: 14px; -fx-padding: 20; -fx-alignment: center;");
-            content.getChildren().add(emptyLabel);
-        } else {
-            // Show last 5 transactions
-            int count = Math.min(5, transactions.size());
-            for (int i = 0; i < count; i++) {
-                Transaction transaction = transactions.get(i);
-                HBox row = createTransactionRow(transaction);
-                content.getChildren().add(row);
-            }
-        }
-
-        return content;
-    }
-
-    private HBox createPortfolioRow(Portfolio portfolio) {
-        HBox row = new HBox(15);
-        row.setAlignment(Pos.CENTER_LEFT);
-        row.setStyle("-fx-padding: 8; -fx-background-color: #353545; -fx-background-radius: 4;");
-
-        Label nameLabel = new Label(portfolio.getName());
-        nameLabel.setStyle("-fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold;");
-        nameLabel.setPrefWidth(150);
-
-        Label returnLabel = new Label(String.format("%.2f%%", portfolio.getReturnPercentage()));
-        String returnColor = portfolio.getReturnPercentage() >= 0 ? "#4ADE80" : "#F87171";
-        returnLabel.setStyle("-fx-text-fill: " + returnColor + "; -fx-font-size: 13px; -fx-font-weight: bold;");
-        returnLabel.setPrefWidth(80);
-
-        Label valueLabel = new Label(currencyFormat.format(portfolio.getTotalValue()));
-        valueLabel.setStyle("-fx-text-fill: #A0A0A0; -fx-font-size: 13px;");
-        valueLabel.setPrefWidth(100);
-
-        Label assetsLabel = new Label(portfolio.getNumberOfAssets() + " assets");
-        assetsLabel.setStyle("-fx-text-fill: #60A5FA; -fx-font-size: 13px;");
-
-        row.getChildren().addAll(nameLabel, returnLabel, valueLabel, assetsLabel);
+        // Style table rows
+        benchmarkTable.setRowFactory(tv -> {
+            TableRow<BenchmarkData> row = new TableRow<>();
+            row.setStyle("-fx-background-color: transparent; -fx-text-fill: white;");
         return row;
+        });
+
+        benchmarkTableContainer.getChildren().clear();
+        benchmarkTableContainer.getChildren().add(benchmarkTable);
     }
 
-    private HBox createTransactionRow(Transaction transaction) {
-        HBox row = new HBox(15);
-        row.setAlignment(Pos.CENTER_LEFT);
-        row.setStyle("-fx-padding: 8; -fx-background-color: #353545; -fx-background-radius: 4;");
-
-        Label typeLabel = new Label(transaction.getType());
-        String typeColor = switch (transaction.getType().toLowerCase()) {
-            case "buy", "deposit" -> "#4ADE80";
-            case "sell", "withdrawal" -> "#F87171";
-            default -> "#60A5FA";
-        };
-        typeLabel.setStyle("-fx-text-fill: " + typeColor + "; -fx-font-size: 13px; -fx-font-weight: bold;");
-        typeLabel.setPrefWidth(80);
-
-        Label amountLabel = new Label(currencyFormat.format(transaction.getAmount()));
-        amountLabel.setStyle("-fx-text-fill: white; -fx-font-size: 13px;");
-        amountLabel.setPrefWidth(100);
-
-        Label portfolioLabel = new Label(transaction.getPortfolio());
-        portfolioLabel.setStyle("-fx-text-fill: #A0A0A0; -fx-font-size: 13px;");
-        portfolioLabel.setPrefWidth(120);
-
-        Label dateLabel = new Label(transaction.getDateFormatted());
-        dateLabel.setStyle("-fx-text-fill: #707070; -fx-font-size: 12px;");
-
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-
-        row.getChildren().addAll(typeLabel, amountLabel, portfolioLabel, dateLabel, spacer);
-        return row;
-    }
-
-    private PerformanceMetrics calculatePerformanceMetrics() {
-        PerformanceMetrics metrics = new PerformanceMetrics();
+    private void setupAssetAllocationTab() {
+        // Current Asset Allocation pie chart placeholder
+        Label assetChartLabel = new Label("🥧 Asset Allocation Pie Chart");
+        assetChartLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #A0A0A0; -fx-alignment: center;");
         
-        if (portfolios.isEmpty()) {
-            return metrics; // Returns default empty values
+        Label assetSubLabel = new Label("Distribution across different asset categories");
+        assetSubLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #707070; -fx-alignment: center;");
+        
+        VBox assetPlaceholder = new VBox(10);
+        assetPlaceholder.setAlignment(Pos.CENTER);
+        assetPlaceholder.getChildren().addAll(assetChartLabel, assetSubLabel);
+        
+        assetAllocationChartContainer.getChildren().clear();
+        assetAllocationChartContainer.getChildren().add(assetPlaceholder);
+
+        // Risk Level allocation pie chart placeholder
+        Label riskChartLabel = new Label("⚖️ Risk Level Allocation Chart");
+        riskChartLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #A0A0A0; -fx-alignment: center;");
+        
+        Label riskSubLabel = new Label("Distribution across different risk levels");
+        riskSubLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #707070; -fx-alignment: center;");
+        
+        VBox riskPlaceholder = new VBox(10);
+        riskPlaceholder.setAlignment(Pos.CENTER);
+        riskPlaceholder.getChildren().addAll(riskChartLabel, riskSubLabel);
+        
+        riskAllocationChartContainer.getChildren().clear();
+        riskAllocationChartContainer.getChildren().add(riskPlaceholder);
+    }
+
+    private void loadSampleData() {
+        benchmarkDataList.clear();
+        
+        benchmarkDataList.addAll(
+            new BenchmarkData("Conservative Growth", "$15,250", "$12,000", "+27.1%", "+18.5%", "+8.6%"),
+            new BenchmarkData("Tech Aggressive", "$8,750", "$8,000", "+9.4%", "+12.2%", "-2.8%"),
+            new BenchmarkData("Balanced Fund", "$22,100", "$18,500", "+19.5%", "+15.3%", "+4.2%")
+        );
+    }
+
+    @FXML
+    private void handleGenerateReport(ActionEvent event) {
+        System.out.println("Generate Report button clicked");
+        
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Generate Report");
+        alert.setHeaderText("Performance Report");
+        alert.setContentText("Performance report generation is not yet implemented.\n\nThis feature will generate comprehensive reports including:\n- Portfolio performance analysis\n- Benchmark comparisons\n- Asset allocation breakdowns\n- Risk assessments");
+        alert.showAndWait();
+    }
+
+    private void refreshData() {
+        System.out.println("Refreshing performance data for time range: " + timeRangeFilter.getValue());
+        // In a real implementation, this would fetch new data based on the time range
+        // For now, we'll just show a message
+        loadSampleData();
+    }
+
+
+
+    // Data class for benchmark comparison table
+    public static class BenchmarkData {
+        private String portfolioName;
+        private String currentValue;
+        private String initialValue;
+        private String returnPercent;
+        private String benchmarkPercent;
+        private String difference;
+
+        public BenchmarkData(String portfolioName, String currentValue, String initialValue,
+                           String returnPercent, String benchmarkPercent, String difference) {
+            this.portfolioName = portfolioName;
+            this.currentValue = currentValue;
+            this.initialValue = initialValue;
+            this.returnPercent = returnPercent;
+            this.benchmarkPercent = benchmarkPercent;
+            this.difference = difference;
         }
 
-        double totalValue = 0;
-        double totalAssets = 0;
-        double totalCash = 0;
-        double totalReturn = 0;
-        int totalAssetCount = 0;
-        Portfolio bestPerformer = portfolios.get(0);
+        // Getters
+        public String getPortfolioName() { return portfolioName; }
+        public String getCurrentValue() { return currentValue; }
+        public String getInitialValue() { return initialValue; }
+        public String getReturnPercent() { return returnPercent; }
+        public String getBenchmarkPercent() { return benchmarkPercent; }
+        public String getDifference() { return difference; }
 
-        for (Portfolio portfolio : portfolios) {
-            totalValue += portfolio.getTotalValue();
-            totalAssets += portfolio.getAssetValue();
-            totalCash += portfolio.getCashBalance();
-            totalReturn += portfolio.getReturnPercentage();
-            totalAssetCount += portfolio.getNumberOfAssets();
-
-            if (portfolio.getReturnPercentage() > bestPerformer.getReturnPercentage()) {
-                bestPerformer = portfolio;
-            }
-        }
-
-        metrics.totalPortfolioValue = currencyFormat.format(totalValue);
-        metrics.totalAssetValue = currencyFormat.format(totalAssets);
-        metrics.totalCashBalance = currencyFormat.format(totalCash);
-        metrics.totalAssetCount = totalAssetCount;
-        
-        double avgReturn = totalReturn / portfolios.size();
-        metrics.averageReturn = String.format("%.2f%%", avgReturn);
-        
-        // Calculate total return value (simplified)
-        double returnValue = totalAssets * (avgReturn / 100);
-        metrics.totalReturnValue = currencyFormat.format(returnValue);
-        metrics.totalReturnPercent = String.format("%.2f%%", avgReturn);
-        
-        metrics.bestPerformerName = bestPerformer.getName();
-        metrics.bestPerformerReturn = String.format("%.2f%%", bestPerformer.getReturnPercentage());
-
-        return metrics;
-    }
-
-    // Helper methods
-    private VBox createPerformanceCard(String title, String value, String subtitle, String subtitleColor) {
-        VBox card = new VBox(8);
-        card.setStyle("-fx-background-color: #2A2A3A; -fx-background-radius: 8; -fx-padding: 20;");
-        card.setMinWidth(200);
-
-        Label titleLabel = new Label(title);
-        titleLabel.setStyle("-fx-text-fill: #A0A0A0; -fx-font-size: 13px;");
-
-        Label valueLabel = new Label(value);
-        if (value.equals("--") || value.equals("0")) {
-            valueLabel.setStyle("-fx-font-size: 24px; -fx-text-fill: #707070; -fx-font-weight: bold;");
-        } else {
-            valueLabel.setStyle("-fx-font-size: 24px; -fx-text-fill: white; -fx-font-weight: bold;");
-        }
-
-        Label subtitleLabel = new Label(subtitle);
-        if (subtitleColor != null) {
-            subtitleLabel.setStyle("-fx-text-fill: " + subtitleColor + "; -fx-font-size: 12px; -fx-font-weight: bold;");
-        } else {
-            subtitleLabel.setStyle("-fx-text-fill: #A0A0A0; -fx-font-size: 12px;");
-        }
-
-        card.getChildren().addAll(titleLabel, valueLabel, subtitleLabel);
-        return card;
-    }
-
-    private VBox createChartCard(String title, String subtitle, String message) {
-        VBox card = new VBox(10);
-        card.setStyle("-fx-background-color: #2A2A3A; -fx-background-radius: 8; -fx-padding: 20;");
-        card.setMinHeight(250);
-
-        Label titleLabel = new Label(title);
-        titleLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: white; -fx-font-weight: bold;");
-
-        Label subtitleLabel = new Label(subtitle);
-        subtitleLabel.setStyle("-fx-text-fill: #A0A0A0; -fx-font-size: 13px;");
-
-        VBox emptyState = new VBox();
-        emptyState.setAlignment(Pos.CENTER);
-        emptyState.setStyle("-fx-border-color: #404040; -fx-border-radius: 5; -fx-border-style: dashed; -fx-padding: 20;");
-        emptyState.setPrefHeight(180);
-        VBox.setVgrow(emptyState, Priority.ALWAYS);
-
-        Label messageLabel = new Label(message);
-        messageLabel.setStyle("-fx-text-fill: #707070; -fx-font-size: 14px;");
-        emptyState.getChildren().add(messageLabel);
-
-        card.getChildren().addAll(titleLabel, subtitleLabel, emptyState);
-        return card;
-    }
-
-    private VBox createDetailCard(String title, VBox content) {
-        VBox card = new VBox(15);
-        card.setStyle("-fx-background-color: #2A2A3A; -fx-background-radius: 8; -fx-padding: 20;");
-        card.setMinHeight(200);
-
-        Label titleLabel = new Label(title);
-        titleLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: white; -fx-font-weight: bold;");
-
-        card.getChildren().addAll(titleLabel, content);
-        return card;
-    }
-
-    private void setEqualGrowth(HBox container, VBox... children) {
-        for (VBox child : children) {
-            HBox.setHgrow(child, Priority.ALWAYS);
-        }
-        container.getChildren().addAll(children);
-    }
-
-    private String getReturnColor(String returnValue) {
-        if (returnValue.contains("+")) return "#4ADE80";
-        if (returnValue.contains("-")) return "#F87171";
-        return null;
-    }
-
-    private void refreshPerformanceData() {
-        System.out.println("Refreshing performance data...");
-        buildPerformanceDashboard();
-        showRefreshNotification();
-    }
-
-    private void updatePerformanceData() {
-        String timeRange = timeRangeFilter.getValue();
-        String portfolio = portfolioFilter.getValue();
-        System.out.println("Updating performance data for " + timeRange + " range and " + portfolio);
-        buildPerformanceDashboard();
-    }
-
-    private void showRefreshNotification() {
-        Label notification = new Label("✓ Performance data refreshed");
-        notification.setStyle("-fx-background-color: #10B981; -fx-text-fill: white; " +
-                             "-fx-padding: 8 12; -fx-background-radius: 4; -fx-font-size: 12px;");
-        
-        contentArea.getChildren().add(3, notification);
-        
-        new Thread(() -> {
-            try {
-                Thread.sleep(2000);
-                javafx.application.Platform.runLater(() -> {
-                    contentArea.getChildren().remove(notification);
-                });
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }).start();
-    }
-
-    // Public methods for data insertion using existing models
-    public void setPortfolios(List<Portfolio> portfolios) {
-        this.portfolios.clear();
-        this.portfolios.addAll(portfolios);
-        updatePortfolioFilter();
-        buildPerformanceDashboard();
-    }
-
-    public void setTransactions(List<Transaction> transactions) {
-        this.transactions.clear();
-        this.transactions.addAll(transactions);
-        buildPerformanceDashboard();
-    }
-
-    public void setCurrentUser(User user) {
-        this.currentUser = user;
-        buildPerformanceDashboard();
-    }
-
-    public void addPortfolio(Portfolio portfolio) {
-        this.portfolios.add(portfolio);
-        updatePortfolioFilter();
-        buildPerformanceDashboard();
-    }
-
-    public void addTransaction(Transaction transaction) {
-        this.transactions.add(0, transaction); // Add to beginning for recent transactions
-        buildPerformanceDashboard();
-    }
-
-    // Helper class for calculated metrics
-    private static class PerformanceMetrics {
-        String totalReturnValue = "--";
-        String totalReturnPercent = "--";
-        String averageReturn = "--";
-        String bestPerformerName = "--";
-        String bestPerformerReturn = "--";
-        String totalPortfolioValue = "--";
-        String totalAssetValue = "--";
-        String totalCashBalance = "--";
-        int totalAssetCount = 0;
+        // Setters
+        public void setPortfolioName(String portfolioName) { this.portfolioName = portfolioName; }
+        public void setCurrentValue(String currentValue) { this.currentValue = currentValue; }
+        public void setInitialValue(String initialValue) { this.initialValue = initialValue; }
+        public void setReturnPercent(String returnPercent) { this.returnPercent = returnPercent; }
+        public void setBenchmarkPercent(String benchmarkPercent) { this.benchmarkPercent = benchmarkPercent; }
+        public void setDifference(String difference) { this.difference = difference; }
     }
 }

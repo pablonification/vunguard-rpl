@@ -33,31 +33,37 @@ public class TransactionController {
     private TableView<Transaction> transactionTable;
 
     @FXML
-    private TableColumn<Transaction, String> idColumn;
+    private TableColumn<Transaction, String> portfolioColumn;
+
+    @FXML
+    private TableColumn<Transaction, String> productColumn;
 
     @FXML
     private TableColumn<Transaction, String> typeColumn;
 
     @FXML
-    private TableColumn<Transaction, String> descriptionColumn;
+    private TableColumn<Transaction, Integer> quantityColumn;
 
     @FXML
-    private TableColumn<Transaction, Double> amountColumn;
+    private TableColumn<Transaction, Double> priceColumn;
 
     @FXML
-    private TableColumn<Transaction, String> portfolioColumn;
+    private TableColumn<Transaction, Double> totalColumn;
 
     @FXML
     private TableColumn<Transaction, String> dateColumn;
-
-    @FXML
-    private TableColumn<Transaction, String> statusColumn;
 
     @FXML
     private TableColumn<Transaction, Void> actionsColumn;
 
     @FXML
     private Button newTransactionButton;
+
+    @FXML
+    private VBox investorSelectionSection;
+
+    @FXML
+    private ComboBox<String> investorSelectionComboBox;
 
     // Updated field names to match your FXML
     @FXML
@@ -78,15 +84,19 @@ public class TransactionController {
     // Sample data for demonstration
     private ObservableList<Transaction> transactionList = FXCollections.observableArrayList();
     private ObservableList<Transaction> filteredList = FXCollections.observableArrayList();
+    
+    // Current user role simulation (in real app, this would come from auth system)
+    private String currentUserRole = "manager"; // Can be: "investor", "manager", "analyst", "admin"
 
     // Create Transaction Dialog Fields - These will be injected when dialog is loaded
-    @FXML private ComboBox<String> typeComboBox;
-    @FXML private TextField descriptionField;
-    @FXML private TextField amountField;
+    @FXML private ComboBox<String> investorComboBox;
     @FXML private ComboBox<String> portfolioComboBox;
-    @FXML private ComboBox<String> statusComboBox;
-    @FXML private TextField assetField;
-    @FXML private TextField sharesField;
+    @FXML private ComboBox<String> productComboBox;
+    @FXML private ComboBox<String> typeComboBox;
+    @FXML private TextField quantityField;
+    @FXML private TextField priceField;
+    @FXML private TextField totalField;
+    @FXML private TextArea notesField;
     @FXML private Button createButton;
     @FXML private Button cancelButton;
 
@@ -108,14 +118,15 @@ public class TransactionController {
             System.out.println("SidebarView Controller NOT injected.");
         }
 
-        // Initialize sample data
-        initializeSampleData();
+        // Setup role-based UI
+        setupRoleBasedUI();
 
         // Configure columns
         setupTableColumns();
+        setupTypeColumnFormatting();
 
-        // Setup filters
-        setupFilters();
+        // Setup investor selection for managers/analysts
+        setupInvestorSelection();
 
         // Setup button events
         newTransactionButton.setOnAction(event -> {
@@ -123,11 +134,8 @@ public class TransactionController {
             showCreateTransactionDialog();
         });
 
-        // Setup clear filters button
-        clearFiltersButton.setOnAction(event -> {
-            System.out.println("Clear Filters button clicked");
-            clearAllFilters();
-        });
+        // Load sample data
+        loadSampleTransactions();
 
         // Set the data to the table
         filteredList.addAll(transactionList);
@@ -139,16 +147,30 @@ public class TransactionController {
 
     private void setupTableColumns() {
         // Setup cell value factories
-        idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
-        typeColumn.setCellValueFactory(new PropertyValueFactory<>("type"));
-        descriptionColumn.setCellValueFactory(new PropertyValueFactory<>("description"));
         portfolioColumn.setCellValueFactory(new PropertyValueFactory<>("portfolio"));
+        productColumn.setCellValueFactory(new PropertyValueFactory<>("product"));
+        typeColumn.setCellValueFactory(new PropertyValueFactory<>("type"));
+        quantityColumn.setCellValueFactory(new PropertyValueFactory<>("quantity"));
         dateColumn.setCellValueFactory(new PropertyValueFactory<>("dateFormatted"));
-        statusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
 
-        // Amount column with currency formatting
-        amountColumn.setCellValueFactory(new PropertyValueFactory<>("amount"));
-        amountColumn.setCellFactory(column -> new TableCell<Transaction, Double>() {
+        // Price column with currency formatting
+        priceColumn.setCellValueFactory(new PropertyValueFactory<>("price"));
+        priceColumn.setCellFactory(column -> new TableCell<Transaction, Double>() {
+            @Override
+            protected void updateItem(Double value, boolean empty) {
+                super.updateItem(value, empty);
+                if (empty || value == null) {
+                    setText("");
+                } else {
+                    NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
+                    setText(currencyFormat.format(value));
+                }
+            }
+        });
+
+        // Total column with currency formatting
+        totalColumn.setCellValueFactory(new PropertyValueFactory<>("total"));
+        totalColumn.setCellFactory(column -> new TableCell<Transaction, Double>() {
             @Override
             protected void updateItem(Double value, boolean empty) {
                 super.updateItem(value, empty);
@@ -194,8 +216,13 @@ public class TransactionController {
             }
         });
 
-        // Status column with color coding
-        statusColumn.setCellFactory(column -> new TableCell<Transaction, String>() {
+        // Setup actions column with buttons
+        setupActionsColumn();
+    }
+
+    // Type column with color coding (will be called separately)
+    private void setupTypeColumnFormatting() {
+        typeColumn.setCellFactory(column -> new TableCell<Transaction, String>() {
             @Override
             protected void updateItem(String value, boolean empty) {
                 super.updateItem(value, empty);
@@ -328,8 +355,9 @@ public class TransactionController {
             
             // The @FXML fields should now be automatically injected
             // Let's verify they were injected properly
-            if (typeComboBox == null || descriptionField == null || amountField == null || 
-                portfolioComboBox == null || statusComboBox == null || createButton == null || cancelButton == null) {
+            if (investorComboBox == null || portfolioComboBox == null || productComboBox == null ||
+                typeComboBox == null || quantityField == null || priceField == null || 
+                totalField == null || notesField == null || createButton == null || cancelButton == null) {
                 System.err.println("FXML injection failed, trying manual lookup...");
                 initializeCreateTransactionDialog(root);
             } else {
@@ -380,29 +408,34 @@ public class TransactionController {
             System.out.println("Starting dialog component initialization...");
             
             // Find and initialize dialog components
-            typeComboBox = (ComboBox<String>) root.lookup("#typeComboBox");
-            descriptionField = (TextField) root.lookup("#descriptionField");
-            amountField = (TextField) root.lookup("#amountField");
+            investorComboBox = (ComboBox<String>) root.lookup("#investorComboBox");
             portfolioComboBox = (ComboBox<String>) root.lookup("#portfolioComboBox");
-            statusComboBox = (ComboBox<String>) root.lookup("#statusComboBox");
-            assetField = (TextField) root.lookup("#assetField");
-            sharesField = (TextField) root.lookup("#sharesField");
+            productComboBox = (ComboBox<String>) root.lookup("#productComboBox");
+            typeComboBox = (ComboBox<String>) root.lookup("#typeComboBox");
+            quantityField = (TextField) root.lookup("#quantityField");
+            priceField = (TextField) root.lookup("#priceField");
+            totalField = (TextField) root.lookup("#totalField");
+            notesField = (TextArea) root.lookup("#notesField");
             createButton = (Button) root.lookup("#createButton");
             cancelButton = (Button) root.lookup("#cancelButton");
 
             // Debug: Check which components were found
             System.out.println("Component lookup results:");
-            System.out.println("typeComboBox: " + (typeComboBox != null ? "Found" : "NOT FOUND"));
-            System.out.println("descriptionField: " + (descriptionField != null ? "Found" : "NOT FOUND"));
-            System.out.println("amountField: " + (amountField != null ? "Found" : "NOT FOUND"));
+            System.out.println("investorComboBox: " + (investorComboBox != null ? "Found" : "NOT FOUND"));
             System.out.println("portfolioComboBox: " + (portfolioComboBox != null ? "Found" : "NOT FOUND"));
-            System.out.println("statusComboBox: " + (statusComboBox != null ? "Found" : "NOT FOUND"));
+            System.out.println("productComboBox: " + (productComboBox != null ? "Found" : "NOT FOUND"));
+            System.out.println("typeComboBox: " + (typeComboBox != null ? "Found" : "NOT FOUND"));
+            System.out.println("quantityField: " + (quantityField != null ? "Found" : "NOT FOUND"));
+            System.out.println("priceField: " + (priceField != null ? "Found" : "NOT FOUND"));
+            System.out.println("totalField: " + (totalField != null ? "Found" : "NOT FOUND"));
+            System.out.println("notesField: " + (notesField != null ? "Found" : "NOT FOUND"));
             System.out.println("createButton: " + (createButton != null ? "Found" : "NOT FOUND"));
             System.out.println("cancelButton: " + (cancelButton != null ? "Found" : "NOT FOUND"));
 
             // Verify all components were found
-            if (typeComboBox == null || descriptionField == null || amountField == null || 
-                portfolioComboBox == null || statusComboBox == null || createButton == null || cancelButton == null) {
+            if (investorComboBox == null || portfolioComboBox == null || productComboBox == null ||
+                typeComboBox == null || quantityField == null || priceField == null || 
+                totalField == null || notesField == null || createButton == null || cancelButton == null) {
                 throw new RuntimeException("Could not find all required dialog components");
             }
 
@@ -419,122 +452,111 @@ public class TransactionController {
     }
 
     private void setupCreateTransactionDialog() {
-        // Setup ComboBoxes with options
-        typeComboBox.getItems().clear();
-        typeComboBox.getItems().addAll("Buy", "Sell", "Deposit", "Withdrawal", "Dividend");
-        typeComboBox.setValue("Buy");
-        
-        portfolioComboBox.getItems().clear();
-        portfolioComboBox.getItems().addAll("Conservative Portfolio", "Growth Portfolio", "Income Portfolio");
-        portfolioComboBox.setValue("Conservative Portfolio");
-        
-        statusComboBox.getItems().clear();
-        statusComboBox.getItems().addAll("Completed", "Processing", "Pending");
-        statusComboBox.setValue("Completed");
-
-        // Add CSS styling for ComboBox dropdowns
-        String comboBoxCss = """
-        .combo-box-popup > .list-view {
-            -fx-background-color: #2A2A3A;
-        }
-        .combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell {
-            -fx-text-fill: white;
-            -fx-background-color: #2A2A3A;
-        }
-        .combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:hover {
-            -fx-background-color: #3A3A4A;
-        }
-        .combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:selected {
-            -fx-background-color: #0A84FF;
-        }
-        """;
-    
-        // Apply CSS to each ComboBox
-        typeComboBox.setStyle(typeComboBox.getStyle() + "; " + comboBoxCss);
-        portfolioComboBox.setStyle(portfolioComboBox.getStyle() + "; " + comboBoxCss);
-        statusComboBox.setStyle(statusComboBox.getStyle() + "; " + comboBoxCss);
-
-        // Setup input validation
-        setupCreateTransactionInputValidation();
-        
-        // Setup auto-description updates
-        setupAutoDescription();
-        
-        // Setup button states
-        setupButtonStates();
-    }
-
-    private void setupCreateTransactionInputValidation() {
-        // Only allow numeric input for amount field
-        amountField.textProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue.matches("\\d*\\.?\\d*")) {
-                amountField.setText(oldValue);
-            }
-        });
-        
-        // Only allow numeric input for shares field (if exists)
-        if (sharesField != null) {
-            sharesField.textProperty().addListener((observable, oldValue, newValue) -> {
-                if (!newValue.matches("\\d*")) {
-                    sharesField.setText(oldValue);
-                }
-            });
-        }
-    }
-
-    private void setupAutoDescription() {
-        // Auto-update description based on type and asset
-        typeComboBox.valueProperty().addListener((obs, oldVal, newVal) -> 
-            updateDescriptionBasedOnType(newVal, assetField != null ? assetField.getText() : "", descriptionField));
-        
-        if (assetField != null) {
-            assetField.textProperty().addListener((obs, oldVal, newVal) -> 
-                updateDescriptionBasedOnType(typeComboBox.getValue(), newVal, descriptionField));
-        }
-    }
-
-    private void setupButtonStates() {
-        // Enable/disable create button based on required fields
-        createButton.disableProperty().bind(
-            descriptionField.textProperty().isEmpty()
-            .or(amountField.textProperty().isEmpty())
-            .or(typeComboBox.valueProperty().isNull())
-            .or(portfolioComboBox.valueProperty().isNull())
+        // Setup investor ComboBox
+        investorComboBox.getItems().addAll(
+            "John Doe (johndoe@email.com)",
+            "Jane Smith (janesmith@email.com)", 
+            "Bob Johnson (bobjohnson@email.com)",
+            "Alice Brown (alicebrown@email.com)",
+            "Charlie Wilson (charliewilson@email.com)"
         );
         
-        // Focus on description field when dialog opens
-        javafx.application.Platform.runLater(() -> descriptionField.requestFocus());
+        // Setup Type ComboBox
+        typeComboBox.getItems().clear();
+        typeComboBox.getItems().addAll("Buy", "Sell");
+        typeComboBox.setValue("Buy");
+
+        // Setup cascading dropdowns
+        setupCascadingDropdowns();
+        
+        // Setup input validation and calculation
+        setupNewInputValidation();
+        
+        // Setup button states
+        setupNewButtonStates();
     }
 
-    private void updateDescriptionBasedOnType(String type, String asset, TextField descriptionField) {
-        if (type != null && !descriptionField.getText().isEmpty() && descriptionField.isFocused()) {
-            return; // Don't auto-update if user has manually entered description
-        }
+    private void setupCascadingDropdowns() {
+        // When investor is selected, enable and populate portfolio dropdown
+        investorComboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                portfolioComboBox.setDisable(false);
+                portfolioComboBox.getItems().clear();
+                portfolioComboBox.getItems().addAll(
+                    "Conservative Growth",
+                    "Tech Aggressive", 
+                    "Balanced Fund"
+                );
+                portfolioComboBox.setPromptText("Select a portfolio");
+                
+                // Reset dependent dropdowns
+                productComboBox.setDisable(true);
+                productComboBox.getItems().clear();
+                productComboBox.setPromptText("Select a portfolio first");
+            }
+        });
+
+        // When portfolio is selected, enable and populate product dropdown
+        portfolioComboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                productComboBox.setDisable(false);
+                productComboBox.getItems().clear();
+                productComboBox.getItems().addAll(
+                    "Tech Growth Fund",
+                    "Global Bond Fund",
+                    "Emerging Markets Fund",
+                    "Real Estate Fund"
+                );
+                productComboBox.setPromptText("Select a product");
+            }
+        });
+    }
+
+    private void setupNewInputValidation() {
+        // Only allow numeric input for quantity and price fields
+        quantityField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.matches("\\d*")) {
+                quantityField.setText(oldValue);
+            }
+            calculateTotal();
+        });
         
-        if (type != null) {
-            String baseDescription = "";
-            switch (type) {
-                case "Buy":
-                    baseDescription = asset.isEmpty() ? "Purchase of stock" : "Purchase of " + asset.toUpperCase() + " stock";
-                    break;
-                case "Sell":
-                    baseDescription = asset.isEmpty() ? "Sale of stock" : "Sale of " + asset.toUpperCase() + " stock";
-                    break;
-                case "Deposit":
-                    baseDescription = "Cash deposit";
-                    break;
-                case "Withdrawal":
-                    baseDescription = "Cash withdrawal";
-                    break;
-                case "Dividend":
-                    baseDescription = asset.isEmpty() ? "Dividend payment" : "Dividend payment from " + asset.toUpperCase();
-                    break;
+        priceField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.matches("\\d*\\.?\\d*")) {
+                priceField.setText(oldValue);
             }
-            
-            if (!descriptionField.isFocused()) {
-                descriptionField.setText(baseDescription);
+            calculateTotal();
+        });
+    }
+
+    private void calculateTotal() {
+        try {
+            if (!quantityField.getText().isEmpty() && !priceField.getText().isEmpty()) {
+                int quantity = Integer.parseInt(quantityField.getText());
+                double price = Double.parseDouble(priceField.getText());
+                double total = quantity * price;
+                totalField.setText(String.format("%.2f", total));
+            } else {
+                totalField.setText("0.00");
             }
+        } catch (NumberFormatException e) {
+            totalField.setText("0.00");
         }
+    }
+
+    private void setupNewButtonStates() {
+        // Enable/disable create button based on required fields
+        createButton.disableProperty().bind(
+            investorComboBox.valueProperty().isNull()
+            .or(portfolioComboBox.valueProperty().isNull())
+            .or(productComboBox.valueProperty().isNull())
+            .or(typeComboBox.valueProperty().isNull())
+            .or(quantityField.textProperty().isEmpty())
+            .or(priceField.textProperty().isEmpty())
+        );
+        
+        // Focus on investor field when dialog opens
+        javafx.application.Platform.runLater(() -> investorComboBox.requestFocus());
     }
 
     // FXML Event Handlers for Create Transaction Dialog
@@ -564,34 +586,50 @@ public class TransactionController {
 
     private boolean validateCreateTransactionInput() {
         // Check required fields
-        if (descriptionField.getText().trim().isEmpty()) {
-            showAlert("Transaction description is required!", Alert.AlertType.ERROR);
-            return false;
-        }
-
-        if (amountField.getText().trim().isEmpty()) {
-            showAlert("Amount is required!", Alert.AlertType.ERROR);
-            return false;
-        }
-
-        try {
-            double amount = Double.parseDouble(amountField.getText());
-            if (amount <= 0) {
-                showAlert("Amount must be greater than zero!", Alert.AlertType.ERROR);
-                return false;
-            }
-        } catch (NumberFormatException e) {
-            showAlert("Please enter a valid amount!", Alert.AlertType.ERROR);
-            return false;
-        }
-
-        if (typeComboBox.getValue() == null) {
-            showAlert("Please select a transaction type!", Alert.AlertType.ERROR);
+        if (investorComboBox.getValue() == null) {
+            showAlert("Please select an investor!", Alert.AlertType.ERROR);
             return false;
         }
 
         if (portfolioComboBox.getValue() == null) {
             showAlert("Please select a portfolio!", Alert.AlertType.ERROR);
+            return false;
+        }
+
+        if (productComboBox.getValue() == null) {
+            showAlert("Please select a product!", Alert.AlertType.ERROR);
+            return false;
+        }
+
+        if (quantityField.getText().trim().isEmpty()) {
+            showAlert("Quantity is required!", Alert.AlertType.ERROR);
+            return false;
+        }
+
+        if (priceField.getText().trim().isEmpty()) {
+            showAlert("Price per unit is required!", Alert.AlertType.ERROR);
+            return false;
+        }
+
+        try {
+            int quantity = Integer.parseInt(quantityField.getText());
+            if (quantity <= 0) {
+                showAlert("Quantity must be greater than zero!", Alert.AlertType.ERROR);
+                return false;
+            }
+        } catch (NumberFormatException e) {
+            showAlert("Please enter a valid quantity!", Alert.AlertType.ERROR);
+            return false;
+        }
+
+        try {
+            double price = Double.parseDouble(priceField.getText());
+            if (price <= 0) {
+                showAlert("Price must be greater than zero!", Alert.AlertType.ERROR);
+                return false;
+            }
+        } catch (NumberFormatException e) {
+            showAlert("Please enter a valid price!", Alert.AlertType.ERROR);
             return false;
         }
 
@@ -601,32 +639,24 @@ public class TransactionController {
     private Transaction createTransactionFromInput() {
         try {
             String type = typeComboBox.getValue();
-            String description = descriptionField.getText().trim();
-            double amount = Double.parseDouble(amountField.getText());
             String portfolio = portfolioComboBox.getValue();
-            String status = statusComboBox.getValue();
-            
-            // Enhance description with asset info if provided
-            String finalDescription = description;
-            if (assetField != null && !assetField.getText().trim().isEmpty()) {
-                finalDescription = description + " (" + assetField.getText().trim().toUpperCase() + ")";
-                if (sharesField != null && !sharesField.getText().trim().isEmpty()) {
-                    finalDescription += " - " + sharesField.getText().trim() + " shares";
-                }
-            }
+            String product = productComboBox.getValue();
+            int quantity = Integer.parseInt(quantityField.getText());
+            double price = Double.parseDouble(priceField.getText());
+            String notes = notesField.getText().trim();
             
             return new Transaction(
                 "TRX-" + UUID.randomUUID().toString().substring(0, 8),
                 type,
-                finalDescription,
-                amount,
                 portfolio,
-                LocalDateTime.now(),
-                status
+                product,
+                quantity,
+                price,
+                java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("MMM d, yyyy"))
             );
             
         } catch (NumberFormatException e) {
-            showAlert("Please enter a valid amount!", Alert.AlertType.ERROR);
+            showAlert("Please enter valid numbers!", Alert.AlertType.ERROR);
             return null;
         }
     }
@@ -711,5 +741,81 @@ public class TransactionController {
         }
         
         alert.showAndWait();
+    }
+    
+    private void setupRoleBasedUI() {
+        // Show investor selection section only for managers, analysts, and admins
+        boolean canViewOtherInvestors = currentUserRole.equals("manager") || 
+                                       currentUserRole.equals("analyst") || 
+                                       currentUserRole.equals("admin");
+        
+        investorSelectionSection.setVisible(canViewOtherInvestors);
+        investorSelectionSection.setManaged(canViewOtherInvestors);
+        
+        if (!canViewOtherInvestors) {
+            System.out.println("Current user role (" + currentUserRole + ") can only view their own transactions");
+        }
+    }
+    
+    private void setupInvestorSelection() {
+        if (investorSelectionComboBox != null) {
+            // Sample investors for demonstration
+            investorSelectionComboBox.getItems().addAll(
+                "John Doe (johndoe@email.com)",
+                "Jane Smith (janesmith@email.com)", 
+                "Bob Johnson (bobjohnson@email.com)",
+                "Alice Brown (alicebrown@email.com)",
+                "Charlie Wilson (charliewilson@email.com)"
+            );
+            
+            // Set default selection
+            investorSelectionComboBox.setValue("John Doe (johndoe@email.com)");
+            
+            // Add listener for selection changes
+            investorSelectionComboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal != null) {
+                    System.out.println("Selected investor: " + newVal);
+                    // In real implementation, this would load transactions for selected investor
+                    loadTransactionsForInvestor(newVal);
+                }
+            });
+        }
+    }
+    
+    private void loadTransactionsForInvestor(String investor) {
+        // Clear current transactions
+        transactionList.clear();
+        filteredList.clear();
+        
+        // Load sample data based on selected investor
+        if (investor.contains("John Doe")) {
+            loadSampleTransactions();
+        } else if (investor.contains("Jane Smith")) {
+            transactionList.addAll(
+                new Transaction("TRX004", "Sell", "Jane's Growth Portfolio", "Tech Growth Fund", 100, 10.00, "May 12, 2025"),
+                new Transaction("TRX005", "Buy", "Jane's Income Portfolio", "Global Bond Fund", 50, 20.00, "May 10, 2025")
+            );
+        } else {
+            // Load default empty or other investor data
+            transactionList.addAll(
+                new Transaction("TRX006", "Buy", "Sample Portfolio", "Sample Fund", 10, 100.00, "May 8, 2025")
+            );
+        }
+        
+        // Update table
+        filteredList.addAll(transactionList);
+        System.out.println("Loaded " + transactionList.size() + " transactions for " + investor);
+    }
+    
+    private void loadSampleTransactions() {
+        transactionList.clear();
+        
+        transactionList.addAll(
+            new Transaction("TRX001", "Sell", "Retirement Fund", "Tech Growth Fund", 100, 10.00, "May 12, 2025"),
+            new Transaction("TRX002", "Buy", "Retirement Fund", "Tech Growth Fund", 10, 100.00, "May 12, 2025"),
+            new Transaction("TRX003", "Sell", "Retirement Fund", "Global Bond Fund", 1, 1000.00, "May 12, 2025")
+        );
+        
+        System.out.println("Sample transactions loaded. Total count: " + transactionList.size());
     }
 }

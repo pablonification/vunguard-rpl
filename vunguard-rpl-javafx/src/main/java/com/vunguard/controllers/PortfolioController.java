@@ -58,17 +58,23 @@ public class PortfolioController {
     private Button createPortfolioButton;
 
     @FXML
+    private VBox investorSelectionSection;
+
+    @FXML
+    private ComboBox<String> investorSelectionComboBox;
+
+    @FXML
     private SidebarController sidebarViewController;
 
     // Sample data for demonstration
     private ObservableList<Portfolio> portfolioList = FXCollections.observableArrayList();
+    
+    // Current user role simulation (in real app, this would come from auth system)
+    private String currentUserRole = "manager"; // Can be: "investor", "manager", "analyst", "admin"
 
     // Create Portfolio Dialog Fields - These will be injected when dialog is loaded
     @FXML private TextField nameField;
-    @FXML private TextField assetValueField;  
-    @FXML private TextField cashBalanceField;
-    @FXML private TextField returnField;
-    @FXML private TextField assetsField;
+    @FXML private TextArea descriptionField;
     @FXML private Button createButton;
     @FXML private Button cancelButton;
 
@@ -90,6 +96,9 @@ public class PortfolioController {
             System.out.println("SidebarView Controller NOT injected.");
         }
 
+        // Setup role-based UI
+        setupRoleBasedUI();
+        
         // Configure columns
         setupTableColumns();
 
@@ -99,8 +108,14 @@ public class PortfolioController {
             showCreatePortfolioDialog();
         });
 
+        // Setup investor selection for managers/analysts
+        setupInvestorSelection();
+
         // Set the data to the table
         portfolioTable.setItems(portfolioList);
+        
+        // Load sample data
+        loadSamplePortfolios();
     }
 
 
@@ -237,8 +252,7 @@ public class PortfolioController {
             
             // The @FXML fields should now be automatically injected
             // Let's verify they were injected properly
-            if (nameField == null || assetValueField == null || cashBalanceField == null || 
-                returnField == null || assetsField == null || createButton == null || cancelButton == null) {
+            if (nameField == null || descriptionField == null || createButton == null || cancelButton == null) {
                 System.err.println("FXML injection failed, trying manual lookup...");
                 initializeCreatePortfolioDialog(root);
             } else {
@@ -295,26 +309,19 @@ public class PortfolioController {
             
             // Find and initialize dialog components
             nameField = (TextField) root.lookup("#nameField");
-            assetValueField = (TextField) root.lookup("#assetValueField");
-            cashBalanceField = (TextField) root.lookup("#cashBalanceField");
-            returnField = (TextField) root.lookup("#returnField");
-            assetsField = (TextField) root.lookup("#assetsField");
+            descriptionField = (TextArea) root.lookup("#descriptionField");
             createButton = (Button) root.lookup("#createButton");
             cancelButton = (Button) root.lookup("#cancelButton");
 
         // Debug: Check which components were found
         System.out.println("Component lookup results:");
         System.out.println("nameField: " + (nameField != null ? "Found" : "NOT FOUND"));
-        System.out.println("assetValueField: " + (assetValueField != null ? "Found" : "NOT FOUND"));
-        System.out.println("cashBalanceField: " + (cashBalanceField != null ? "Found" : "NOT FOUND"));
-        System.out.println("returnField: " + (returnField != null ? "Found" : "NOT FOUND"));
-        System.out.println("assetsField: " + (assetsField != null ? "Found" : "NOT FOUND"));
+        System.out.println("descriptionField: " + (descriptionField != null ? "Found" : "NOT FOUND"));
         System.out.println("createButton: " + (createButton != null ? "Found" : "NOT FOUND"));
         System.out.println("cancelButton: " + (cancelButton != null ? "Found" : "NOT FOUND"));
 
         // Verify all components were found
-        if (nameField == null || assetValueField == null || cashBalanceField == null || 
-            returnField == null || assetsField == null || createButton == null || cancelButton == null) {
+        if (nameField == null || descriptionField == null || createButton == null || cancelButton == null) {
             throw new RuntimeException("Could not find all required dialog components");
         }
 
@@ -355,30 +362,15 @@ private void debugPrintAllNodes(javafx.scene.Node node, int depth) {
     }
 }
     private void setupCreatePortfolioInputValidation() {
-        // Allow only numeric input for amount fields
-        assetValueField.textProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue.matches("\\d*\\.?\\d*")) {
-                assetValueField.setText(oldValue);
-            }
-        });
-        
-        cashBalanceField.textProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue.matches("\\d*\\.?\\d*")) {
-                cashBalanceField.setText(oldValue);
-            }
-        });
-        
-        returnField.textProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue.matches("-?\\d*\\.?\\d*")) {
-                returnField.setText(oldValue);
-            }
-        });
-        
-        assetsField.textProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue.matches("\\d*")) {
-                assetsField.setText(oldValue);
-            }
-        });
+        // Simple validation for portfolio name
+        if (nameField != null) {
+            nameField.textProperty().addListener((observable, oldValue, newValue) -> {
+                // Enable/disable create button based on name field
+                if (createButton != null) {
+                    createButton.setDisable(newValue.trim().isEmpty());
+                }
+            });
+        }
     }
 
     // FXML Event Handlers for Create Portfolio Dialog
@@ -406,55 +398,32 @@ private void debugPrintAllNodes(javafx.scene.Node node, int depth) {
     }
 
     private boolean validateCreatePortfolioInput() {
-        try {
-            String name = nameField.getText().trim();
-            double assetValue = assetValueField.getText().isEmpty() ? 0.0 : Double.parseDouble(assetValueField.getText());
-            double cashBalance = cashBalanceField.getText().isEmpty() ? 0.0 : Double.parseDouble(cashBalanceField.getText());
-            double returnPercentage = returnField.getText().isEmpty() ? 0.0 : Double.parseDouble(returnField.getText());
-            int numberOfAssets = assetsField.getText().isEmpty() ? 0 : Integer.parseInt(assetsField.getText());
-            
-            // Validate input
-            if (name.isEmpty()) {
-                showAlert("Portfolio name is required!", Alert.AlertType.ERROR);
-                return false;
-            }
-            
-            if (assetValue < 0 || cashBalance < 0 || numberOfAssets < 0) {
-                showAlert("Values cannot be negative!", Alert.AlertType.ERROR);
-                return false;
-            }
-            
-            // Check for duplicate portfolio name
-            for (Portfolio existing : portfolioList) {
-                if (existing.getName().equalsIgnoreCase(name)) {
-                    showAlert("Portfolio name already exists! Please choose a different name.", Alert.AlertType.ERROR);
-                    return false;
-                }
-            }
-            
-            return true;
-            
-        } catch (NumberFormatException e) {
-            showAlert("Please enter valid numbers for numeric fields!", Alert.AlertType.ERROR);
+        String name = nameField.getText().trim();
+        
+        // Validate portfolio name
+        if (name.isEmpty()) {
+            showAlert("Portfolio name is required!", Alert.AlertType.ERROR);
             return false;
         }
-    }    private Portfolio createPortfolioFromInput() {
-        try {
-            String name = nameField.getText().trim();
-            double assetValue = assetValueField.getText().isEmpty() ? 0.0 : Double.parseDouble(assetValueField.getText());
-            double cashBalance = cashBalanceField.getText().isEmpty() ? 0.0 : Double.parseDouble(cashBalanceField.getText());
-            double returnPercentage = returnField.getText().isEmpty() ? 0.0 : Double.parseDouble(returnField.getText());
-            int numberOfAssets = assetsField.getText().isEmpty() ? 0 : Integer.parseInt(assetsField.getText());
-            
-            // Generate a unique ID for the new portfolio
-            String id = "PF" + String.format("%03d", portfolioList.size() + 1);
-            
-            return new Portfolio(id, name, assetValue, cashBalance, returnPercentage, numberOfAssets);
-            
-        } catch (NumberFormatException e) {
-            showAlert("Please enter valid numbers for numeric fields!", Alert.AlertType.ERROR);
-            return null;
+        
+        // Check for duplicate portfolio name
+        for (Portfolio existing : portfolioList) {
+            if (existing.getName().equalsIgnoreCase(name)) {
+                showAlert("Portfolio name already exists! Please choose a different name.", Alert.AlertType.ERROR);
+                return false;
+            }
         }
+        
+        return true;
+    }    private Portfolio createPortfolioFromInput() {
+        String name = nameField.getText().trim();
+        String description = descriptionField.getText().trim();
+        
+        // Generate a unique ID for the new portfolio
+        String id = "PF" + String.format("%03d", portfolioList.size() + 1);
+        
+        // Create portfolio with default values (0.0 for amounts, 0 for assets)
+        return new Portfolio(id, name, 0.0, 0.0, 0.0, 0);
     }
 
     private void closeCreatePortfolioDialog() {
@@ -537,5 +506,78 @@ private void debugPrintAllNodes(javafx.scene.Node node, int depth) {
         }
         
         alert.showAndWait();
+    }
+    
+    private void setupRoleBasedUI() {
+        // Show investor selection section only for managers, analysts, and admins
+        boolean canViewOtherInvestors = currentUserRole.equals("manager") || 
+                                       currentUserRole.equals("analyst") || 
+                                       currentUserRole.equals("admin");
+        
+        investorSelectionSection.setVisible(canViewOtherInvestors);
+        investorSelectionSection.setManaged(canViewOtherInvestors);
+        
+        if (!canViewOtherInvestors) {
+            System.out.println("Current user role (" + currentUserRole + ") can only view their own portfolios");
+        }
+    }
+    
+    private void setupInvestorSelection() {
+        if (investorSelectionComboBox != null) {
+            // Sample investors for demonstration
+            investorSelectionComboBox.getItems().addAll(
+                "John Doe (johndoe@email.com)",
+                "Jane Smith (janesmith@email.com)", 
+                "Bob Johnson (bobjohnson@email.com)",
+                "Alice Brown (alicebrown@email.com)",
+                "Charlie Wilson (charliewilson@email.com)"
+            );
+            
+            // Set default selection
+            investorSelectionComboBox.setValue("John Doe (johndoe@email.com)");
+            
+            // Add listener for selection changes
+            investorSelectionComboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal != null) {
+                    System.out.println("Selected investor: " + newVal);
+                    // In real implementation, this would load portfolios for selected investor
+                    loadPortfoliosForInvestor(newVal);
+                }
+            });
+        }
+    }
+    
+    private void loadPortfoliosForInvestor(String investor) {
+        // Clear current portfolios
+        portfolioList.clear();
+        
+        // Load sample data based on selected investor
+        if (investor.contains("John Doe")) {
+            loadSamplePortfolios();
+        } else if (investor.contains("Jane Smith")) {
+            portfolioList.addAll(
+                new Portfolio("PF004", "Jane's Growth Portfolio", 25000.00, 5000.00, 8.7, 12),
+                new Portfolio("PF005", "Jane's Income Portfolio", 18000.00, 2000.00, 4.2, 8)
+            );
+        } else {
+            // Load default empty or other investor data
+            portfolioList.addAll(
+                new Portfolio("PF006", "Sample Portfolio", 10000.00, 1000.00, 2.5, 5)
+            );
+        }
+        
+        System.out.println("Loaded " + portfolioList.size() + " portfolios for " + investor);
+    }
+    
+    private void loadSamplePortfolios() {
+        portfolioList.clear();
+        
+        portfolioList.addAll(
+            new Portfolio("PF001", "Conservative Growth", 12000.00, 3000.00, 5.2, 8),
+            new Portfolio("PF002", "Tech Aggressive", 8000.00, 750.00, -2.1, 5),
+            new Portfolio("PF003", "Balanced Fund", 18500.00, 4250.00, 7.8, 12)
+        );
+        
+        System.out.println("Sample portfolios loaded. Total count: " + portfolioList.size());
     }
 }

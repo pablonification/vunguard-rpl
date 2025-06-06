@@ -19,9 +19,12 @@
         </ImageView>
 
         <Button fx:id="dashboardButton" onAction="#handleDashboardAction" text="Dashboard" styleClass="sidebar-button" style="-fx-font-family: 'Inter 18pt'; -fx-text-fill: white; -fx-background-color: #1E1E2C; -fx-pref-width: 200; -fx-alignment: baseline-left; -fx-padding: 10 15;"/>
+        <Button fx:id="productsButton" onAction="#handleProductsAction" text="Products" styleClass="sidebar-button" style="-fx-font-family: 'Inter 18pt'; -fx-text-fill: #A0A0A0; -fx-background-color: transparent; -fx-pref-width: 200; -fx-alignment: baseline-left; -fx-padding: 10 15;"/>
         <Button fx:id="portfoliosButton" onAction="#handlePortfoliosAction" text="Portfolios" styleClass="sidebar-button" style="-fx-font-family: 'Inter 18pt'; -fx-text-fill: #A0A0A0; -fx-background-color: transparent; -fx-pref-width: 200; -fx-alignment: baseline-left; -fx-padding: 10 15;"/>
         <Button fx:id="transactionsButton" onAction="#handleTransactionsAction" text="Transactions" styleClass="sidebar-button" style="-fx-font-family: 'Inter 18pt'; -fx-text-fill: #A0A0A0; -fx-background-color: transparent; -fx-pref-width: 200; -fx-alignment: baseline-left; -fx-padding: 10 15;"/>
         <Button fx:id="performanceButton" onAction="#handlePerformanceAction" text="Performance" styleClass="sidebar-button" style="-fx-font-family: 'Inter 18pt'; -fx-text-fill: #A0A0A0; -fx-background-color: transparent; -fx-pref-width: 200; -fx-alignment: baseline-left; -fx-padding: 10 15;"/>
+        <Button fx:id="reviewRecommendationsButton" onAction="#handleReviewRecommendationsAction" text="Review Recommendations" styleClass="sidebar-button" style="-fx-font-family: 'Inter 18pt'; -fx-text-fill: #A0A0A0; -fx-background-color: transparent; -fx-pref-width: 200; -fx-alignment: baseline-left; -fx-padding: 10 15;"/>
+        <Button fx:id="investmentRecommendationsButton" onAction="#handleInvestmentRecommendationsAction" text="My Recommendations" styleClass="sidebar-button" style="-fx-font-family: 'Inter 18pt'; -fx-text-fill: #A0A0A0; -fx-background-color: transparent; -fx-pref-width: 200; -fx-alignment: baseline-left; -fx-padding: 10 15;"/>
         <Button fx:id="accountsButton" onAction="#handleAccountsAction" text="Accounts" styleClass="sidebar-button" style="-fx-font-family: 'Inter 18pt'; -fx-text-fill: #A0A0A0; -fx-background-color: transparent; -fx-pref-width: 200; -fx-alignment: baseline-left; -fx-padding: 10 15;"/>
 
         <VBox VBox.vgrow="ALWAYS" /> <!-- Spacer -->

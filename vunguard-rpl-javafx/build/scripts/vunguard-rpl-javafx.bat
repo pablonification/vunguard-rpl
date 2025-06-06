@@ -70,7 +70,7 @@ goto fail
 :execute
 @rem Setup the command line
 
-set CLASSPATH=%APP_HOME%\lib\vunguard-rpl-javafx.jar;%APP_HOME%\lib\javafx-fxml-21-win.jar;%APP_HOME%\lib\javafx-controls-21-win.jar;%APP_HOME%\lib\javafx-graphics-21-win.jar;%APP_HOME%\lib\javafx-base-21-win.jar
+set CLASSPATH=%APP_HOME%\lib\vunguard-rpl-javafx.jar;%APP_HOME%\lib\javafx-fxml-21-linux.jar;%APP_HOME%\lib\javafx-controls-21-linux.jar;%APP_HOME%\lib\javafx-graphics-21-linux.jar;%APP_HOME%\lib\javafx-base-21-linux.jar
 
 
 @rem Execute vunguard-rpl-javafx
