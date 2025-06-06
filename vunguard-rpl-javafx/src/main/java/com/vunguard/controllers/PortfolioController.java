@@ -17,6 +17,8 @@ import javafx.geometry.Insets;
 import javafx.stage.Stage;
 import javafx.stage.Modality;
 import javafx.event.ActionEvent;
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.BooleanBinding;
 import java.text.NumberFormat;
 import java.util.Locale;
 import java.util.Optional;
@@ -258,7 +260,12 @@ public class PortfolioController {
             } else {
                 System.out.println("FXML injection successful!");
                 setupCreatePortfolioInputValidation();
-                createButton.disableProperty().bind(nameField.textProperty().isEmpty());
+                // Create a binding that checks for trimmed empty text
+                BooleanBinding nameEmptyBinding = Bindings.createBooleanBinding(
+                    () -> nameField.getText().trim().isEmpty(),
+                    nameField.textProperty()
+                );
+                createButton.disableProperty().bind(nameEmptyBinding);
                 javafx.application.Platform.runLater(() -> nameField.requestFocus());
             }
             
@@ -328,8 +335,12 @@ public class PortfolioController {
         // Setup input validation
         setupCreatePortfolioInputValidation();
         
-        // Enable/disable create button based on name field
-        createButton.disableProperty().bind(nameField.textProperty().isEmpty());
+        // Enable/disable create button based on name field (trimmed)
+        BooleanBinding nameEmptyBinding = Bindings.createBooleanBinding(
+            () -> nameField.getText().trim().isEmpty(),
+            nameField.textProperty()
+        );
+        createButton.disableProperty().bind(nameEmptyBinding);
         
         // Focus on name field
         javafx.application.Platform.runLater(() -> nameField.requestFocus());
@@ -365,10 +376,8 @@ private void debugPrintAllNodes(javafx.scene.Node node, int depth) {
         // Simple validation for portfolio name
         if (nameField != null) {
             nameField.textProperty().addListener((observable, oldValue, newValue) -> {
-                // Enable/disable create button based on name field
-                if (createButton != null) {
-                    createButton.setDisable(newValue.trim().isEmpty());
-                }
+                // Note: createButton disable state is already handled by binding in showCreatePortfolioDialog()
+                // No manual setDisable() needed here since it's bound to nameField.textProperty().isEmpty()
             });
         }
     }

@@ -1,6 +1,7 @@
 package com.vunguard.controllers;
 
 import com.vunguard.models.Product;
+import com.vunguard.services.ProductService;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -28,6 +29,7 @@ import javafx.stage.Stage;
 import javafx.stage.Modality;
 import javafx.event.ActionEvent;
 import java.io.IOException;
+import java.util.List;
 
 public class ProductsController {
 
@@ -40,9 +42,10 @@ public class ProductsController {
     @FXML
     private SidebarController sidebarViewController;
 
-    // Sample product data for demonstration
+    // Product data from database
     private final ObservableList<Product> productList = FXCollections.observableArrayList();
     private TableView<Product> productsTable;
+    private ProductService productService;
 
     // Add Product Dialog Fields
     @FXML private TextField codeField;
@@ -58,6 +61,14 @@ public class ProductsController {
     @FXML
     private void initialize() {
         System.out.println("ProductsController initialized");
+        
+        // Initialize service
+        try {
+            productService = ProductService.getInstance();
+        } catch (Exception e) {
+            System.err.println("Failed to initialize ProductService: " + e.getMessage());
+            e.printStackTrace();
+        }
         
         if (sidebarViewController != null) {
             System.out.println("SidebarView Controller injected into ProductsController");
@@ -75,8 +86,8 @@ public class ProductsController {
             scrollPane.getStyleClass().add("products-scroll-pane");
         }
         
-        // Initialize sample products
-        initializeSampleProducts();
+        // Load products from database
+        loadProductsFromDatabase();
         
         // Create products content
         setupProductsView();
@@ -208,16 +219,25 @@ public class ProductsController {
         });
     }
 
-    private void initializeSampleProducts() {
-        productList.clear();
+    private void loadProductsFromDatabase() {
+        if (productService == null) {
+            System.err.println("ProductService not initialized, using empty data");
+            return;
+        }
         
-        productList.addAll(
-            new Product("1", "TGF001", "Tech Growth Fund", "A fund focused on high-growth technology companies", "Growth", "High"),
-            new Product("2", "GBF002", "Global Bond Fund", "A diversified portfolio of government and corporate bonds", "Income", "Low"),
-            new Product("3", "EME003", "Emerging Markets ETF", "Exposure to high-growth emerging market economies", "Growth", "High"),
-            new Product("4", "INC004", "Income Fund", "Focus on dividend-paying stocks and fixed income", "Income", "Medium"),
-            new Product("5", "HIF005", "Healthcare Innovation Fund", "Investing in breakthrough healthcare technologies", "Growth", "Medium")
-        );
+        try {
+            List<Product> products = productService.getAllProducts();
+            productList.clear();
+            productList.addAll(products);
+            System.out.println("Loaded " + products.size() + " products from database");
+        } catch (Exception e) {
+            System.err.println("Failed to load products from database: " + e.getMessage());
+            e.printStackTrace();
+            
+            // Show error to user
+            showAlert(AlertType.ERROR, "Database Error", 
+                     "Failed to load products from database. Please check your connection.");
+        }
     }
 
     private void showAddProductDialog() {
@@ -262,25 +282,32 @@ public class ProductsController {
     @FXML
     private void handleSaveAction(ActionEvent event) {
         if (validateInput()) {
-            // Create new product
-            String id = String.valueOf(productList.size() + 1);
-            String code = codeField.getText().trim();
-            String name = nameField.getText().trim();
-            String description = descriptionField.getText().trim();
-            String strategy = strategyComboBox.getValue();
-            String riskLevel = riskLevelComboBox.getValue();
-            
-            Product newProduct = new Product(id, code, name, description, strategy, riskLevel);
-            productList.add(newProduct);
-            
-            // Refresh table
-            productsTable.refresh();
-            
-            showAlert(AlertType.INFORMATION, "Success", "Product has been added successfully!");
-            
-            // Close dialog
-            if (addProductStage != null) {
-                addProductStage.close();
+            try {
+                String code = codeField.getText().trim();
+                String name = nameField.getText().trim();
+                String description = descriptionField.getText().trim();
+                String strategy = strategyComboBox.getValue();
+                String riskLevel = riskLevelComboBox.getValue();
+                
+                // Create product via service
+                boolean success = productService.createProduct(code, name, description, strategy, riskLevel);
+                
+                if (success) {
+                    // Reload products from database
+                    loadProductsFromDatabase();
+                    
+                    showAlert(AlertType.INFORMATION, "Success", "Product has been added successfully!");
+                    
+                    // Close dialog
+                    if (addProductStage != null) {
+                        addProductStage.close();
+                    }
+                } else {
+                    showAlert(AlertType.ERROR, "Error", "Failed to create product. Please try again.");
+                }
+            } catch (Exception e) {
+                System.err.println("Error creating product: " + e.getMessage());
+                showAlert(AlertType.ERROR, "Error", "Failed to create product: " + e.getMessage());
             }
         }
     }

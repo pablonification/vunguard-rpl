@@ -236,7 +236,17 @@ public class CreateRecommendationController {
     private Recommendation buildRecommendation() {
         String id = isEditing ? editingRecommendation.getId() : "REC" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         String productName = productComboBox.getSelectionModel().getSelectedItem();
-        String analystName = "current_analyst"; // Would come from session
+        
+        // Get current analyst name from authentication service
+        String analystName = "current_analyst"; // default fallback
+        try {
+            com.vunguard.services.AuthenticationService authService = com.vunguard.services.AuthenticationService.getInstance();
+            if (authService.isAuthenticated()) {
+                analystName = authService.getCurrentUser().getUsername();
+            }
+        } catch (Exception e) {
+            System.err.println("Could not get current user: " + e.getMessage());
+        }
         String type = typeComboBox.getSelectionModel().getSelectedItem();
         double targetPrice = Double.parseDouble(targetPriceField.getText().trim());
         double currentPrice = Double.parseDouble(currentPriceField.getText().trim());

@@ -1,6 +1,7 @@
 package com.vunguard.controllers;
 
 import com.vunguard.models.Recommendation;
+import com.vunguard.services.RecommendationService;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -44,14 +45,24 @@ public class ReviewRecommendationsController {
 
     private ObservableList<Recommendation> allRecommendations = FXCollections.observableArrayList();
     private FilteredList<Recommendation> filteredRecommendations;
+    private RecommendationService recommendationService;
 
     @FXML
     private void initialize() {
         System.out.println("ReviewRecommendationsController initialized");
+        
+        // Initialize service
+        try {
+            recommendationService = RecommendationService.getInstance();
+        } catch (Exception e) {
+            System.err.println("Failed to initialize RecommendationService: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
         createTable();
         setupTable();
         setupFilters();
-        loadSampleData();
+        loadRecommendationsFromDatabase();
         setupActionButtons();
     }
 
@@ -255,10 +266,22 @@ public class ReviewRecommendationsController {
         
         alert.showAndWait().ifPresent(response -> {
             if (response == ButtonType.OK) {
-                recommendation.setStatus("APPROVED");
-                recommendation.setUpdated(LocalDateTime.now());
-                recommendationsTable.refresh();
-                showAlert("Success", "Recommendation approved successfully!", Alert.AlertType.INFORMATION);
+                try {
+                    if (recommendationService != null) {
+                        boolean success = recommendationService.approveRecommendation(recommendation.getId());
+                        if (success) {
+                            recommendation.setStatus("APPROVED");
+                            recommendation.setUpdated(LocalDateTime.now());
+                            recommendationsTable.refresh();
+                            showAlert("Success", "Recommendation approved successfully!", Alert.AlertType.INFORMATION);
+                        } else {
+                            showAlert("Error", "Failed to approve recommendation. Please try again.", Alert.AlertType.ERROR);
+                        }
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error approving recommendation: " + e.getMessage());
+                    showAlert("Error", "Failed to approve recommendation: " + e.getMessage(), Alert.AlertType.ERROR);
+                }
             }
         });
     }
@@ -272,54 +295,46 @@ public class ReviewRecommendationsController {
         
         alert.showAndWait().ifPresent(response -> {
             if (response == ButtonType.OK) {
-                recommendation.setStatus("REJECTED");
-                recommendation.setUpdated(LocalDateTime.now());
-                recommendationsTable.refresh();
-                showAlert("Success", "Recommendation rejected successfully!", Alert.AlertType.INFORMATION);
+                try {
+                    if (recommendationService != null) {
+                        boolean success = recommendationService.rejectRecommendation(recommendation.getId());
+                        if (success) {
+                            recommendation.setStatus("REJECTED");
+                            recommendation.setUpdated(LocalDateTime.now());
+                            recommendationsTable.refresh();
+                            showAlert("Success", "Recommendation rejected successfully!", Alert.AlertType.INFORMATION);
+                        } else {
+                            showAlert("Error", "Failed to reject recommendation. Please try again.", Alert.AlertType.ERROR);
+                        }
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error rejecting recommendation: " + e.getMessage());
+                    showAlert("Error", "Failed to reject recommendation: " + e.getMessage(), Alert.AlertType.ERROR);
+                }
             }
         });
     }
 
-    private void loadSampleData() {
-        List<Recommendation> sampleRecommendations = new ArrayList<>();
+    private void loadRecommendationsFromDatabase() {
+        if (recommendationService == null) {
+            System.err.println("RecommendationService not initialized, using empty data");
+            return;
+        }
         
-        sampleRecommendations.add(new Recommendation(
-            "REC001", "Real Estate Income Trust", "budi_analyst", "SELL", 15.00, 10.00, 3, "REJECTED",
-            LocalDateTime.now().minusDays(25), "Medium Term",
-            "The real estate market shows signs of overvaluation in key sectors...",
-            "Technical indicators show bearish divergence...",
-            "Strong fundamentals but market timing concerns...",
-            "Interest rate risk and liquidity concerns..."
-        ));
-        
-        sampleRecommendations.add(new Recommendation(
-            "REC002", "AI & Robotics Fund", "budi_analyst", "BUY", 13.00, 11.00, 3, "IMPLEMENTED",
-            LocalDateTime.now().minusDays(25), "Long Term",
-            "AI technology adoption accelerating across industries...",
-            "Strong momentum indicators and volume confirmation...",
-            "Growing market demand and innovation pipeline...",
-            "Technology sector volatility and regulatory changes..."
-        ));
-        
-        sampleRecommendations.add(new Recommendation(
-            "REC003", "Clean Energy ETF", "sarah_analyst", "BUY", 28.50, 25.00, 4, "PENDING",
-            LocalDateTime.now().minusDays(2), "Medium Term",
-            "Government policies favoring renewable energy transition...",
-            "Breakout above key resistance levels...",
-            "Strong ESG demand and policy support...",
-            "Commodity price volatility and supply chain issues..."
-        ));
-        
-        sampleRecommendations.add(new Recommendation(
-            "REC004", "Emerging Markets Bond", "david_analyst", "SELL", 45.00, 48.00, 2, "PENDING",
-            LocalDateTime.now().minusDays(1), "Short Term",
-            "Currency headwinds and geopolitical tensions rising...",
-            "Technical breakdown below support...",
-            "Weak economic fundamentals in key markets...",
-            "High currency risk and political instability..."
-        ));
-        
-        allRecommendations.addAll(sampleRecommendations);
+        try {
+            List<Recommendation> recommendations = recommendationService.getAllRecommendations();
+            allRecommendations.clear();
+            allRecommendations.addAll(recommendations);
+            System.out.println("Loaded " + recommendations.size() + " recommendations from database");
+        } catch (Exception e) {
+            System.err.println("Failed to load recommendations from database: " + e.getMessage());
+            e.printStackTrace();
+            
+            // Show error to user
+            showAlert("Database Error", 
+                     "Failed to load recommendations from database. Please check your connection.", 
+                     Alert.AlertType.ERROR);
+        }
     }
 
     private void showAlert(String title, String message, Alert.AlertType type) {

@@ -170,11 +170,20 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
+-- Create separate function for recommendations table that uses 'updated' column
+CREATE OR REPLACE FUNCTION update_recommendations_updated_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
 CREATE TRIGGER update_accounts_updated_at BEFORE UPDATE ON accounts
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_recommendations_updated_at BEFORE UPDATE ON recommendations
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_recommendations_updated BEFORE UPDATE ON recommendations
+    FOR EACH ROW EXECUTE FUNCTION update_recommendations_updated_column();
 
 CREATE TRIGGER update_portfolios_updated_at BEFORE UPDATE ON portfolios
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

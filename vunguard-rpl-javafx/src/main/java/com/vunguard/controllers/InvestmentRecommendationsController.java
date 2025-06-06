@@ -1,6 +1,8 @@
 package com.vunguard.controllers;
 
 import com.vunguard.models.Recommendation;
+import com.vunguard.services.RecommendationService;
+import com.vunguard.services.AuthenticationService;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -47,15 +49,32 @@ public class InvestmentRecommendationsController {
 
     private ObservableList<Recommendation> allRecommendations = FXCollections.observableArrayList();
     private FilteredList<Recommendation> filteredRecommendations;
-    private String currentAnalyst = "current_analyst"; // Would come from session
+    private RecommendationService recommendationService;
+    private AuthenticationService authService;
+    private String currentAnalyst = "current_analyst"; // Will be updated from session
 
     @FXML
     private void initialize() {
         System.out.println("InvestmentRecommendationsController initialized");
+        
+        // Initialize services
+        try {
+            recommendationService = RecommendationService.getInstance();
+            authService = AuthenticationService.getInstance();
+            
+            // Get current analyst from session
+            if (authService.isAuthenticated()) {
+                currentAnalyst = authService.getCurrentUser().getUsername();
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to initialize services: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
         createTable();
         setupTable();
         setupFilters();
-        loadSampleData();
+        loadRecommendationsFromDatabase();
         setupActionButtons();
     }
 
@@ -302,57 +321,106 @@ public class InvestmentRecommendationsController {
         
         alert.showAndWait().ifPresent(response -> {
             if (response == ButtonType.OK) {
-                allRecommendations.remove(recommendation);
-                showAlert("Success", "Recommendation deleted successfully!", Alert.AlertType.INFORMATION);
+                try {
+                    if (recommendationService != null) {
+                        // Delete from database first
+                        boolean success = recommendationService.deleteRecommendation(recommendation.getId());
+                        if (success) {
+                            // Reload recommendations from database to reflect the deletion
+                            loadRecommendationsFromDatabase();
+                            showAlert("Success", "Recommendation deleted successfully!", Alert.AlertType.INFORMATION);
+                        } else {
+                            showAlert("Error", "Failed to delete recommendation from database. Please try again.", Alert.AlertType.ERROR);
+                        }
+                    } else {
+                        showAlert("Error", "Recommendation service not available. Please restart the application.", Alert.AlertType.ERROR);
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error deleting recommendation: " + e.getMessage());
+                    e.printStackTrace();
+                    showAlert("Error", "Failed to delete recommendation: " + e.getMessage(), Alert.AlertType.ERROR);
+                }
             }
         });
     }
 
     public void addRecommendation(Recommendation recommendation) {
-        allRecommendations.add(recommendation);
-        applyFilters();
-    }
-
-    public void updateRecommendation(Recommendation oldRecommendation, Recommendation newRecommendation) {
-        int index = allRecommendations.indexOf(oldRecommendation);
-        if (index >= 0) {
-            allRecommendations.set(index, newRecommendation);
-            recommendationsTable.refresh();
+        try {
+            if (recommendationService != null) {
+                // Save to database using RecommendationService
+                boolean success = recommendationService.createRecommendation(
+                    recommendation.getProductName(),
+                    recommendation.getType(),
+                    recommendation.getTargetPrice(),
+                    recommendation.getCurrentPrice(),
+                    recommendation.getConfidence(),
+                    recommendation.getTimeframe(),
+                    recommendation.getRationale(),
+                    recommendation.getTechnicalAnalysis(),
+                    recommendation.getFundamentalAnalysis(),
+                    recommendation.getRisks()
+                );
+                
+                if (success) {
+                    // Reload recommendations from database to get the latest data
+                    loadRecommendationsFromDatabase();
+                    System.out.println("Recommendation saved to database successfully");
+                } else {
+                    showAlert("Error", "Failed to save recommendation to database. Please try again.", Alert.AlertType.ERROR);
+                }
+            } else {
+                showAlert("Error", "Recommendation service not available. Please restart the application.", Alert.AlertType.ERROR);
+            }
+        } catch (Exception e) {
+            System.err.println("Error saving recommendation to database: " + e.getMessage());
+            e.printStackTrace();
+            showAlert("Error", "Failed to save recommendation: " + e.getMessage(), Alert.AlertType.ERROR);
         }
     }
 
-    private void loadSampleData() {
-        List<Recommendation> sampleRecommendations = new ArrayList<>();
+    public void updateRecommendation(Recommendation oldRecommendation, Recommendation newRecommendation) {
+        try {
+            if (recommendationService != null) {
+                // Update in database first
+                boolean success = recommendationService.updateRecommendation(newRecommendation);
+                if (success) {
+                    // Reload recommendations from database to get the latest data
+                    loadRecommendationsFromDatabase();
+                    System.out.println("Recommendation updated in database successfully");
+                } else {
+                    showAlert("Error", "Failed to update recommendation in database. Please try again.", Alert.AlertType.ERROR);
+                }
+            } else {
+                showAlert("Error", "Recommendation service not available. Please restart the application.", Alert.AlertType.ERROR);
+            }
+        } catch (Exception e) {
+            System.err.println("Error updating recommendation: " + e.getMessage());
+            e.printStackTrace();
+            showAlert("Error", "Failed to update recommendation: " + e.getMessage(), Alert.AlertType.ERROR);
+        }
+    }
+
+    private void loadRecommendationsFromDatabase() {
+        if (recommendationService == null) {
+            System.err.println("RecommendationService not initialized, using empty data");
+            return;
+        }
         
-        // Only current analyst's recommendations
-        sampleRecommendations.add(new Recommendation(
-            "REC005", "Tech Innovation Fund", currentAnalyst, "BUY", 32.00, 28.50, 4, "PENDING",
-            LocalDateTime.now().minusDays(3), "Long Term",
-            "Strong growth potential in emerging technologies...",
-            "Technical breakout pattern confirmed...",
-            "Solid revenue growth and market expansion...",
-            "High volatility and competition risks..."
-        ));
-        
-        sampleRecommendations.add(new Recommendation(
-            "REC006", "Healthcare REIT", currentAnalyst, "SELL", 25.00, 27.50, 2, "REJECTED",
-            LocalDateTime.now().minusDays(7), "Medium Term",
-            "Regulatory concerns and aging infrastructure...",
-            "Bearish technical indicators...",
-            "Declining occupancy rates...",
-            "Healthcare policy changes and interest rate sensitivity..."
-        ));
-        
-        sampleRecommendations.add(new Recommendation(
-            "REC007", "Global Bond Index", currentAnalyst, "BUY", 105.50, 102.75, 3, "APPROVED",
-            LocalDateTime.now().minusDays(14), "Short Term",
-            "Interest rate stabilization expected...",
-            "Support level holding strong...",
-            "Diversified exposure and stable yield...",
-            "Duration risk and currency fluctuations..."
-        ));
-        
-        allRecommendations.addAll(sampleRecommendations);
+        try {
+            // Load only current user's recommendations
+            List<Recommendation> recommendations = recommendationService.getCurrentUserRecommendations();
+            allRecommendations.clear();
+            allRecommendations.addAll(recommendations);
+            System.out.println("Loaded " + recommendations.size() + " recommendations for analyst: " + currentAnalyst);
+        } catch (Exception e) {
+            System.err.println("Failed to load recommendations from database: " + e.getMessage());
+            e.printStackTrace();
+            
+            // Show error to user
+            showAlert("Database Error", 
+                     "Failed to load your recommendations from database. Please check your connection.", 
+                     Alert.AlertType.ERROR);
+        }
     }
 
     private void showAlert(String title, String message, Alert.AlertType type) {
