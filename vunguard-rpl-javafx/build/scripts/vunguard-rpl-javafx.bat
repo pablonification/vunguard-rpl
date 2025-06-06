@@ -70,7 +70,7 @@ goto fail
 :execute
 @rem Setup the command line
 
-set CLASSPATH=%APP_HOME%\lib\vunguard-rpl-javafx.jar;%APP_HOME%\lib\javafx-fxml-21-linux.jar;%APP_HOME%\lib\javafx-controls-21-linux.jar;%APP_HOME%\lib\javafx-graphics-21-linux.jar;%APP_HOME%\lib\javafx-base-21-linux.jar
+set CLASSPATH=%APP_HOME%\lib\vunguard-rpl-javafx.jar;%APP_HOME%\lib\postgresql-42.7.3.jar;%APP_HOME%\lib\HikariCP-5.0.1.jar;%APP_HOME%\lib\jackson-annotations-2.15.2.jar;%APP_HOME%\lib\jackson-datatype-jsr310-2.15.2.jar;%APP_HOME%\lib\jackson-databind-2.15.2.jar;%APP_HOME%\lib\jackson-core-2.15.2.jar;%APP_HOME%\lib\jbcrypt-0.4.jar;%APP_HOME%\lib\logback-classic-1.4.11.jar;%APP_HOME%\lib\slf4j-api-2.0.7.jar;%APP_HOME%\lib\snakeyaml-2.0.jar;%APP_HOME%\lib\okhttp-4.11.0.jar;%APP_HOME%\lib\javafx-fxml-21-linux.jar;%APP_HOME%\lib\javafx-controls-21-linux.jar;%APP_HOME%\lib\checker-qual-3.42.0.jar;%APP_HOME%\lib\logback-core-1.4.11.jar;%APP_HOME%\lib\okio-jvm-3.2.0.jar;%APP_HOME%\lib\kotlin-stdlib-jdk8-1.6.20.jar;%APP_HOME%\lib\kotlin-stdlib-jdk7-1.6.20.jar;%APP_HOME%\lib\kotlin-stdlib-1.6.20.jar;%APP_HOME%\lib\javafx-graphics-21-linux.jar;%APP_HOME%\lib\kotlin-stdlib-common-1.6.20.jar;%APP_HOME%\lib\annotations-13.0.jar;%APP_HOME%\lib\javafx-base-21-linux.jar
 
 
 @rem Execute vunguard-rpl-javafx

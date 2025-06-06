@@ -1,11 +1,13 @@
 package com.vunguard.controllers;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
 import com.vunguard.Main;
 import com.vunguard.models.User;
+import com.vunguard.services.AuthenticationService;
 
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -42,12 +44,17 @@ public class LoginController {
 
     @FXML
     private Hyperlink registerLink;
+    
+    private AuthenticationService authService;
 
     @FXML
     private void initialize() {
         System.out.println("LoginController initialized");
-        // Anda bisa menambahkan listener atau binding di sini jika perlu
-        // Contoh: Mengubah style tombol saat di-hover
+        
+        // Initialize authentication service
+        authService = AuthenticationService.getInstance();
+        
+        // Set up UI styling and interactions
         signInButton.setOnMouseEntered(e -> signInButton.setStyle("-fx-background-color: #58D6A0; -fx-text-fill: #101018; -fx-font-family: 'Inter 18pt'; -fx-font-weight: bold; -fx-padding: 10 0; -fx-background-radius: 5;"));
         signInButton.setOnMouseExited(e -> signInButton.setStyle("-fx-background-color: #6EE7B7; -fx-text-fill: #12121A; -fx-font-family: 'Inter 18pt'; -fx-font-weight: bold; -fx-padding: 10 0; -fx-background-radius: 5;"));
     }    @FXML
@@ -64,42 +71,37 @@ public class LoginController {
             return;
         }
 
-        // Get registered users
-        List<User> registeredUsers = RegistrationController.getRegisteredUsers();
-        
-        // Check if any user matches the credentials
-        // Note: In a real application, passwords should be hashed and compared securely
-        boolean loginSuccessful = false;
-        for (User user : registeredUsers) {
-            if (user.getUsername().equals(username)) {
-                // For demo purposes, we'll accept any password for registered users
-                // In a real app, you'd validate the actual password
-                loginSuccessful = true;
-                break;
-            }
-        }
-        
-        // Also check for admin account
-        if (username.equals("admin") && password.equals("password")) {
-            loginSuccessful = true;
-        }
-
-        if (loginSuccessful) {
-            System.out.println("Login successful");
-            try {
+        try {
+            // Attempt authentication using the service
+            String sessionToken = authService.login(username, password);
+            
+            if (sessionToken != null) {
+                System.out.println("Login successful for user: " + username);
+                System.out.println("Session token: " + sessionToken);
+                
+                // Load dashboard scene
                 Main.loadDashboardScene();
-            } catch (IOException e) {
-                System.err.println("Error loading Dashboard scene: " + e.getMessage());
-                showAlert("Error loading dashboard. Please try again.", AlertType.ERROR);
+            } else {
+                System.out.println("Login failed for user: " + username);
+                showAlert(
+                    "Login failed!\n\n" +
+                    "Invalid username or password. Please check your credentials and try again.\n" +
+                    "If you don't have an account, please contact an administrator.",
+                    AlertType.ERROR
+                );
             }
-        } else {
-            System.out.println("Login failed");
-            showAlert(
-                "Login failed!\n\n" +
-                "Invalid username or password. Please check your credentials and try again.\n" +
-                "If you don't have an account, please register first.",
-                AlertType.ERROR
-            );
+        } catch (SQLException e) {
+            System.err.println("Database error during login: " + e.getMessage());
+            e.printStackTrace();
+            showAlert("Database connection error. Please try again later.", AlertType.ERROR);
+        } catch (IOException e) {
+            System.err.println("Error loading Dashboard scene: " + e.getMessage());
+            e.printStackTrace();
+            showAlert("Error loading dashboard. Please try again.", AlertType.ERROR);
+        } catch (Exception e) {
+            System.err.println("Unexpected error during login: " + e.getMessage());
+            e.printStackTrace();
+            showAlert("An unexpected error occurred. Please try again.", AlertType.ERROR);
         }
     }@FXML
     private void handleForgotPasswordAction(ActionEvent event) {

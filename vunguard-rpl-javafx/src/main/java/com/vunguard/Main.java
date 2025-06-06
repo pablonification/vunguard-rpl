@@ -1,5 +1,7 @@
 package com.vunguard;
 
+import com.vunguard.config.DatabaseConfig;
+import com.vunguard.utils.DatabaseInitializer;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -16,6 +18,10 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) throws IOException {
         primaryStageRef = primaryStage;
+        
+        // Initialize backend components
+        initializeBackend();
+        
         // Load custom fonts
         try {
             Font.loadFont(getClass().getResourceAsStream("fonts/Inter_18pt-Regular.ttf"), 10); // Size doesn't matter here as it's for loading
@@ -26,22 +32,50 @@ public class Main extends Application {
             // e.printStackTrace(); // Uncomment for debugging
         }
 
-        // Untuk sementara, kita buat scene kosong sederhana.
-        // Nanti kita akan memuat FXML untuk login di sini.
-        Parent root = FXMLLoader.load(getClass().getResource("views/DashboardView.fxml")); // Muat DashboardView
+        // Start with login screen initially
+        Parent root = FXMLLoader.load(getClass().getResource("views/LoginView.fxml"));
 
-        Scene scene = new Scene(root, 1280, 720); // Sesuaikan ukuran jika perlu
+        Scene scene = new Scene(root, 800, 600);
         
         // Load CSS
         String css = getClass().getResource("styles/application.css").toExternalForm();
         scene.getStylesheets().add(css);
 
-        primaryStage.setTitle("Vanguard Asset Management");
+        primaryStage.setTitle("Vanguard Asset Management - Login");
         primaryStage.setScene(scene);
         primaryStage.show();
     }
+    
+    private void initializeBackend() {
+        System.out.println("=== Vunguard RPL Application Starting ===");
+        
+        try {
+            // Initialize database
+            DatabaseInitializer.printDatabaseInfo();
+            DatabaseInitializer.initializeDatabase();
+            
+            System.out.println("Backend initialization completed successfully!");
+            
+        } catch (Exception e) {
+            System.err.println("Backend initialization failed: " + e.getMessage());
+            e.printStackTrace();
+            
+            // Show error dialog but continue with application startup
+            System.err.println("Application will continue without backend functionality");
+        }
+    }
 
     public static void main(String[] args) {
+        // Add shutdown hook for cleanup
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println("Shutting down application...");
+            try {
+                DatabaseConfig.getInstance().shutdown();
+            } catch (Exception e) {
+                System.err.println("Error during shutdown: " + e.getMessage());
+            }
+        }));
+        
         launch(args);
     }
 
