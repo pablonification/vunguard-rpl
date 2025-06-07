@@ -1,6 +1,8 @@
 package com.vunguard.controllers;
 
 import com.vunguard.models.Portfolio;
+import com.vunguard.services.PortfolioService;
+import com.vunguard.services.AuthenticationService;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -20,6 +22,7 @@ import javafx.event.ActionEvent;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import java.text.NumberFormat;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.io.IOException;
@@ -68,11 +71,16 @@ public class PortfolioController {
     @FXML
     private SidebarController sidebarViewController;
 
-    // Sample data for demonstration
+    // Portfolio data
     private ObservableList<Portfolio> portfolioList = FXCollections.observableArrayList();
     
-    // Current user role simulation (in real app, this would come from auth system)
-    private String currentUserRole = "manager"; // Can be: "investor", "manager", "analyst", "admin"
+    // Services
+    private PortfolioService portfolioService;
+    private AuthenticationService authService;
+    
+    // Currently selected investor (for manager/admin view)
+    private Integer selectedInvestorId = null;
+    private javafx.beans.value.ChangeListener<String> investorSelectionListener;
 
     // Create Portfolio Dialog Fields - These will be injected when dialog is loaded
     @FXML private TextField nameField;
@@ -84,7 +92,16 @@ public class PortfolioController {
 
     @FXML
     private void initialize() {
-        System.out.println("PortfolioController initialized");
+        System.out.println("PortfolioController initialized - Current selectedInvestorId: " + selectedInvestorId);
+
+        // Initialize services
+        try {
+            portfolioService = PortfolioService.getInstance();
+            authService = AuthenticationService.getInstance();
+        } catch (Exception e) {
+            System.err.println("Failed to initialize services: " + e.getMessage());
+            e.printStackTrace();
+        }
 
         if (sidebarViewController != null) {
             System.out.println("SidebarView Controller injected into PortfolioController");
@@ -116,8 +133,10 @@ public class PortfolioController {
         // Set the data to the table
         portfolioTable.setItems(portfolioList);
         
-        // Load sample data
-        loadSamplePortfolios();
+        // Load portfolios from database
+        loadPortfoliosFromDatabase();
+        
+        System.out.println("PortfolioController initialization complete - Final selectedInvestorId: " + selectedInvestorId);
     }
 
 
@@ -386,17 +405,51 @@ private void debugPrintAllNodes(javafx.scene.Node node, int depth) {
     @FXML
     private void handleCreateAction(ActionEvent event) {
         if (validateCreatePortfolioInput()) {
-            Portfolio portfolio = createPortfolioFromInput();
-            if (portfolio != null) {
-                portfolioList.add(portfolio);
-                showSuccessAlert("Portfolio '" + portfolio.getName() + "' created successfully!");
+            String name = nameField.getText().trim();
+            String description = descriptionField.getText().trim();
+            double initialCash = 0.0; // Default to 0, could be made configurable
+            
+            if (portfolioService != null) {
+                boolean success;
                 
-                // Log the creation
-                System.out.println("Portfolio created: " + portfolio.getName());
-                System.out.println("Total Value: $" + String.format("%.2f", portfolio.getTotalValue()));
+                // Check if we should create for selected investor or current user
+                if (selectedInvestorId != null && authService != null && authService.isLoggedIn()) {
+                    String currentUserRole = authService.getCurrentUserRole();
+                    boolean canCreateForOthers = "manager".equals(currentUserRole) || 
+                                               "analyst".equals(currentUserRole) || 
+                                               "admin".equals(currentUserRole);
+                    
+                    if (canCreateForOthers) {
+                        success = portfolioService.createPortfolioForUser(name, description, initialCash, selectedInvestorId);
+                    } else {
+                        success = portfolioService.createPortfolio(name, description, initialCash);
+                    }
+                } else {
+                    success = portfolioService.createPortfolio(name, description, initialCash);
+                }
                 
-                // Close the dialog
-                closeCreatePortfolioDialog();
+                if (success) {
+                    // Show success message
+                    String investorName = selectedInvestorId != null ? 
+                        investorSelectionComboBox.getValue() : "your account";
+                    showSuccessAlert("Portfolio '" + name + "' created successfully for " + investorName + "!");
+                    
+                    // Reload portfolios - use specific investor if selected, otherwise general reload
+                    if (selectedInvestorId != null && investorSelectionComboBox != null && investorSelectionComboBox.getValue() != null) {
+                        // Reload for the specific selected investor
+                        loadPortfoliosForInvestor(investorSelectionComboBox.getValue());
+                    } else {
+                        // Reload current user's portfolios
+                        loadPortfoliosFromDatabase();
+                    }
+                    
+                    // Close the dialog
+                    closeCreatePortfolioDialog();
+                } else {
+                    showAlert("Failed to create portfolio. Please try again.", Alert.AlertType.ERROR);
+                }
+            } else {
+                showAlert("Portfolio service not available. Please try again.", Alert.AlertType.ERROR);
             }
         }
     }
@@ -424,15 +477,6 @@ private void debugPrintAllNodes(javafx.scene.Node node, int depth) {
         }
         
         return true;
-    }    private Portfolio createPortfolioFromInput() {
-        String name = nameField.getText().trim();
-        String description = descriptionField.getText().trim();
-        
-        // Generate a unique ID for the new portfolio
-        String id = "PF" + String.format("%03d", portfolioList.size() + 1);
-        
-        // Create portfolio with default values (0.0 for amounts, 0 for assets)
-        return new Portfolio(id, name, 0.0, 0.0, 0.0, 0);
     }
 
     private void closeCreatePortfolioDialog() {
@@ -518,21 +562,33 @@ private void debugPrintAllNodes(javafx.scene.Node node, int depth) {
     }
     
     private void setupRoleBasedUI() {
-        // Show investor selection section only for managers, analysts, and admins
-        boolean canViewOtherInvestors = currentUserRole.equals("manager") || 
-                                       currentUserRole.equals("analyst") || 
-                                       currentUserRole.equals("admin");
+        // Check if user is logged in and get their role
+        boolean canViewOtherInvestors = false;
         
+        if (authService != null && authService.isLoggedIn()) {
+            String currentUserRole = authService.getCurrentUserRole();
+            canViewOtherInvestors = "manager".equals(currentUserRole) || 
+                                   "analyst".equals(currentUserRole) || 
+                                   "admin".equals(currentUserRole);
+        }
+        
+        // Show investor selection section only for managers, analysts, and admins
         investorSelectionSection.setVisible(canViewOtherInvestors);
         investorSelectionSection.setManaged(canViewOtherInvestors);
         
         if (!canViewOtherInvestors) {
-            System.out.println("Current user role (" + currentUserRole + ") can only view their own portfolios");
+            System.out.println("Current user can only view their own portfolios");
         }
     }
     
     private void setupInvestorSelection() {
         if (investorSelectionComboBox != null) {
+            // Store current selection if any
+            String currentSelection = investorSelectionComboBox.getValue();
+            
+            // Clear existing items to prevent duplicates
+            investorSelectionComboBox.getItems().clear();
+            
             // Sample investors for demonstration
             investorSelectionComboBox.getItems().addAll(
                 "John Doe (johndoe@email.com)",
@@ -542,51 +598,151 @@ private void debugPrintAllNodes(javafx.scene.Node node, int depth) {
                 "Charlie Wilson (charliewilson@email.com)"
             );
             
-            // Set default selection
-            investorSelectionComboBox.setValue("John Doe (johndoe@email.com)");
+            // Restore previous selection or set default
+            if (currentSelection != null && investorSelectionComboBox.getItems().contains(currentSelection)) {
+                // Restore previous selection
+                investorSelectionComboBox.setValue(currentSelection);
+                selectedInvestorId = getInvestorIdFromSelection(currentSelection);
+                System.out.println("Restored investor selection: " + currentSelection);
+            } else if (investorSelectionComboBox.getValue() == null) {
+                // Set default selection to first investor
+                String defaultSelection = "John Doe (johndoe@email.com)";
+                investorSelectionComboBox.setValue(defaultSelection);
+                selectedInvestorId = getInvestorIdFromSelection(defaultSelection);
+                System.out.println("Set default investor selection: " + defaultSelection);
+            }
+            
+            // Clear existing listeners to prevent multiple listeners
+            if (investorSelectionListener != null) {
+                investorSelectionComboBox.valueProperty().removeListener(investorSelectionListener);
+            }
             
             // Add listener for selection changes
-            investorSelectionComboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
-                if (newVal != null) {
-                    System.out.println("Selected investor: " + newVal);
-                    // In real implementation, this would load portfolios for selected investor
+            investorSelectionListener = (obs, oldVal, newVal) -> {
+                if (newVal != null && !newVal.equals(oldVal)) {
+                    System.out.println("Investor selection changed from: " + oldVal + " to: " + newVal);
+                    selectedInvestorId = getInvestorIdFromSelection(newVal);
                     loadPortfoliosForInvestor(newVal);
                 }
-            });
+            };
+            investorSelectionComboBox.valueProperty().addListener(investorSelectionListener);
+        }
+    }
+    
+    /**
+     * Get investor ID from selection string
+     * Queries the database to get the actual user ID
+     */
+    private Integer getInvestorIdFromSelection(String selection) {
+        if (selection == null) return null;
+        
+        try {
+            // Extract email from selection string (format: "Name (email)")
+            int startIdx = selection.indexOf('(');
+            int endIdx = selection.indexOf(')');
+            if (startIdx > 0 && endIdx > startIdx) {
+                String email = selection.substring(startIdx + 1, endIdx);
+                
+                // Query database to get user ID by email
+                return getUserIdByEmail(email);
+            }
+        } catch (Exception e) {
+            System.err.println("Error parsing investor selection: " + e.getMessage());
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Get user ID from email by querying the database
+     */
+    private Integer getUserIdByEmail(String email) {
+        if (authService == null) return null;
+        
+        try {
+            // For now, use a simple mapping based on what we know from schema
+            // In a real app, this would be a proper database query
+            switch (email) {
+                case "johndoe@email.com": return 4; // john_doe will be ID 4 (after admin, analyst, manager)
+                case "janesmith@email.com": return 5; // jane_smith will be ID 5
+                case "bobjohnson@email.com": return 6; // bob_johnson will be ID 6
+                case "alicebrown@email.com": return 7; // alice_brown will be ID 7
+                case "charliewilson@email.com": return 8; // charlie_wilson will be ID 8
+                default: return null;
+            }
+        } catch (Exception e) {
+            System.err.println("Error getting user ID by email: " + e.getMessage());
+            return null;
         }
     }
     
     private void loadPortfoliosForInvestor(String investor) {
-        // Clear current portfolios
-        portfolioList.clear();
-        
-        // Load sample data based on selected investor
-        if (investor.contains("John Doe")) {
-            loadSamplePortfolios();
-        } else if (investor.contains("Jane Smith")) {
-            portfolioList.addAll(
-                new Portfolio("PF004", "Jane's Growth Portfolio", 25000.00, 5000.00, 8.7, 12),
-                new Portfolio("PF005", "Jane's Income Portfolio", 18000.00, 2000.00, 4.2, 8)
-            );
-        } else {
-            // Load default empty or other investor data
-            portfolioList.addAll(
-                new Portfolio("PF006", "Sample Portfolio", 10000.00, 1000.00, 2.5, 5)
-            );
+        if (portfolioService == null) {
+            System.err.println("PortfolioService not initialized, using empty data");
+            return;
         }
         
-        System.out.println("Loaded " + portfolioList.size() + " portfolios for " + investor);
+        try {
+            List<Portfolio> portfolios;
+            
+            if (selectedInvestorId != null && authService != null && authService.isLoggedIn()) {
+                String currentUserRole = authService.getCurrentUserRole();
+                boolean canViewOthers = "manager".equals(currentUserRole) || 
+                                       "analyst".equals(currentUserRole) || 
+                                       "admin".equals(currentUserRole);
+                
+                if (canViewOthers) {
+                    // Load portfolios for selected investor
+                    portfolios = portfolioService.getPortfoliosForUser(selectedInvestorId);
+                    System.out.println("Loaded " + portfolios.size() + " portfolios for investor: " + investor);
+                } else {
+                    // Fall back to current user's portfolios
+                    portfolios = portfolioService.getUserPortfolios();
+                    System.out.println("Loading current user's portfolios (no permission for others)");
+                }
+            } else {
+                // Load current user's portfolios
+                portfolios = portfolioService.getUserPortfolios();
+                System.out.println("Loading current user's portfolios");
+            }
+            
+            portfolioList.clear();
+            portfolioList.addAll(portfolios);
+            
+        } catch (Exception e) {
+            System.err.println("Failed to load portfolios for investor: " + e.getMessage());
+            e.printStackTrace();
+            
+            // Show error to user
+            showAlert("Failed to load portfolios. Please check your connection.", 
+                     Alert.AlertType.ERROR);
+        }
     }
     
-    private void loadSamplePortfolios() {
-        portfolioList.clear();
+    private void loadPortfoliosFromDatabase() {
+        // Use the current investor selection if available
+        if (selectedInvestorId != null && investorSelectionComboBox != null) {
+            loadPortfoliosForInvestor(investorSelectionComboBox.getValue());
+            return;
+        }
         
-        portfolioList.addAll(
-            new Portfolio("PF001", "Conservative Growth", 12000.00, 3000.00, 5.2, 8),
-            new Portfolio("PF002", "Tech Aggressive", 8000.00, 750.00, -2.1, 5),
-            new Portfolio("PF003", "Balanced Fund", 18500.00, 4250.00, 7.8, 12)
-        );
+        if (portfolioService == null) {
+            System.err.println("PortfolioService not initialized, using empty data");
+            return;
+        }
         
-        System.out.println("Sample portfolios loaded. Total count: " + portfolioList.size());
+        try {
+            List<Portfolio> portfolios = portfolioService.getUserPortfolios();
+            portfolioList.clear();
+            portfolioList.addAll(portfolios);
+            System.out.println("Loaded " + portfolios.size() + " portfolios from database");
+        } catch (Exception e) {
+            System.err.println("Failed to load portfolios from database: " + e.getMessage());
+            e.printStackTrace();
+            
+            // Show error to user
+            showAlert("Failed to load portfolios from database. Please check your connection.", 
+                     Alert.AlertType.ERROR);
+        }
     }
 }

@@ -71,6 +71,22 @@ public class AuthenticationService {
         return currentUser != null;
     }
     
+    public boolean isLoggedIn() {
+        return currentUser != null;
+    }
+    
+    public String getCurrentUserRole() {
+        return currentUser != null ? currentUser.getRole() : null;
+    }
+    
+    public String getCurrentUsername() {
+        return currentUser != null ? currentUser.getUsername() : null;
+    }
+    
+    public int getCurrentUserId() {
+        return currentUser != null ? currentUser.getId() : -1;
+    }
+    
     public boolean hasRole(String role) {
         return currentUser != null && role.equals(currentUser.getRole());
     }

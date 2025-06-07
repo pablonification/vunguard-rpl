@@ -218,6 +218,16 @@ VALUES (
     'manager'
 ) ON CONFLICT (username) DO NOTHING;
 
+-- Insert sample investor users
+INSERT INTO accounts (username, full_name, email, password, role) 
+VALUES 
+    ('john_doe', 'John Doe', 'johndoe@email.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'investor'),
+    ('jane_smith', 'Jane Smith', 'janesmith@email.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'investor'),
+    ('bob_johnson', 'Bob Johnson', 'bobjohnson@email.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'investor'),
+    ('alice_brown', 'Alice Brown', 'alicebrown@email.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'investor'),
+    ('charlie_wilson', 'Charlie Wilson', 'charliewilson@email.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'investor')
+ON CONFLICT (username) DO NOTHING;
+
 -- Insert sample products
 INSERT INTO products (symbol, name, sector, market_cap, current_price, price_change_24h, price_change_percentage_24h, volume_24h) 
 VALUES 
