@@ -4,13 +4,15 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 public class User {
+    private int id;
     private String username;
     private String fullName;
     private String email;
     private String role;
     private LocalDate createdDate;
     
-    public User(String username, String fullName, String email, String role, LocalDate createdDate) {
+    public User(int id, String username, String fullName, String email, String role, LocalDate createdDate) {
+        this.id = id;
         this.username = username;
         this.fullName = fullName;
         this.email = email;
@@ -19,6 +21,10 @@ public class User {
     }
 
     // Getters
+    public int getId() { 
+        return id; 
+    }
+
     public String getUsername() {
         return username;
     }
@@ -45,6 +51,10 @@ public class User {
     }
     
     // Setters
+    public void setId(int id) { 
+        this.id = id; 
+    }
+    
     public void setUsername(String username) {
         this.username = username;
     }

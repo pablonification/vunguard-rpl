@@ -1,5 +1,6 @@
 package com.vunguard.controllers;
 
+import com.vunguard.dao.UserDAO;
 import com.vunguard.models.User;
 import com.vunguard.controllers.RegistrationController;
 import javafx.fxml.FXML;
@@ -22,6 +23,7 @@ import javafx.event.ActionEvent;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.io.IOException;
+import java.util.Optional;
 
 public class AccountsController {
 
@@ -47,7 +49,9 @@ public class AccountsController {
     private TableColumn<User, String> createdColumn;
 
     @FXML
-    private TableColumn<User, Void> actionsColumn;    @FXML
+    private TableColumn<User, Void> actionsColumn;    
+    
+    @FXML
     private SidebarController sidebarViewController;
 
     // Sample data for users
@@ -58,12 +62,14 @@ public class AccountsController {
     private TextField editFullNameField;
     private TextField editEmailField;
     private ComboBox<String> editRoleComboBox;
+    private UserDAO userDAO;
     private Stage editDialogStage;
     private User currentEditingUser;
 
     @FXML
     private void initialize() {
         System.out.println("AccountsController initialized");
+        this.userDAO = new UserDAO();
 
         if (sidebarViewController != null) {
             System.out.println("SidebarView Controller injected into AccountsController");
@@ -77,40 +83,26 @@ public class AccountsController {
             System.out.println("SidebarView Controller NOT injected.");
         }
 
-        // Add sample users
-        addSampleUsers();
-
         // Configure table columns
         setupTableColumns();
 
         // Set the data to the table
         accountsTable.setItems(userList);
+
+        loadAccountsFromDB();
     }
 
-    private void addSampleUsers() {
-        userList.addAll(RegistrationController.getRegisteredUsers());
-        // Sample data matching the screenshot
-        userList.addAll(Arrays.asList(
-            new User("arqilasp_investor", "Arqila Surya Putra", "investor@gmail.com", "Investor", LocalDate.of(2025, 5, 12)),
-            new User("arqilasp13", "Arqila Surya Putra", "arqilasp12@gmail.com", "Admin", LocalDate.of(2025, 5, 12)),
-            new User("arqilasp12", "Arqila Surya Putra", "arqilasp@gmail.com", "Investor", LocalDate.of(2025, 5, 12)),
-            new User("budi_analist", "Budi Analist", "budianalist@gmail.com", "Analyst", LocalDate.of(2025, 5, 11)),
-            new User("budi_manager", "Budi Manager", "budimanager@gmail.com", "Manager", LocalDate.of(2025, 5, 11)),
-            new User("admin0912", "Arqila Surya Putra", "budi12@gmail.com", "Admin", LocalDate.of(2025, 5, 11)),
-            new User("arqilasp", "Arqila Surya Putra", "budi@gmail.com", "Admin", LocalDate.of(2025, 5, 11)),
-            new User("investor1", "John Investor", "investor1@example.com", "Investor", LocalDate.of(2025, 5, 11)),
-            new User("manager1", "Robert Manager", "manager1@example.com", "Manager", LocalDate.of(2025, 5, 11)),
-            new User("analyst1", "Sarah Analyst", "analyst1@example.com", "Analyst", LocalDate.of(2025, 5, 11)),
-            new User("admin1", "Admin User", "admin1@example.com", "Admin", LocalDate.of(2025, 5, 11)),
-            new User("investor2", "Jane Investor", "investor2@example.com", "Investor", LocalDate.of(2025, 5, 11))
-        ));
+    private void loadAccountsFromDB() {
+        ObservableList<User> userList = userDAO.getAccounts();
+        accountsTable.setItems(userList);
+        System.out.println("Loaded " + userList.size() + " accounts from the database.");
     }
 
     private void setupTableColumns() {
-        // Setup cell value factories
         usernameColumn.setCellValueFactory(new PropertyValueFactory<>("username"));
         fullNameColumn.setCellValueFactory(new PropertyValueFactory<>("fullName"));
         emailColumn.setCellValueFactory(new PropertyValueFactory<>("email"));
+        createdColumn.setCellValueFactory(new PropertyValueFactory<>("createdDateFormatted"));
         
         // Role column with custom styling (badges)
         roleColumn.setCellValueFactory(new PropertyValueFactory<>("role"));
@@ -159,144 +151,96 @@ public class AccountsController {
     }
     
     private void setupActionsColumn() {
-        actionsColumn.setPrefWidth(150);
-        actionsColumn.setMinWidth(150);
-        
-        actionsColumn.setCellFactory(new Callback<TableColumn<User, Void>, TableCell<User, Void>>() {
+        actionsColumn.setCellFactory(param -> new TableCell<>() {
+            private final Button editButton = new Button("Edit");
+            private final Button deleteButton = new Button("Delete");
+
+            {
+                editButton.setStyle("-fx-background-color: #0A84FF; -fx-text-fill: white; -fx-font-size: 11px;");
+                deleteButton.setStyle("-fx-background-color: #F87171; -fx-text-fill: white; -fx-font-size: 11px;");
+
+                editButton.setOnAction(event -> {
+                    User user = getTableView().getItems().get(getIndex());
+                    showEditUserDialog(user);
+                });
+                deleteButton.setOnAction(event -> {
+                    User user = getTableView().getItems().get(getIndex());
+                    showDeleteConfirmation(user);
+                });
+            }
+
             @Override
-            public TableCell<User, Void> call(TableColumn<User, Void> param) {
-                return new TableCell<User, Void>() {
-                    private final Button editButton = new Button("Edit");
-                    private final Button deleteButton = new Button();
-                    
-                    {
-                        // Configure edit button
-                        editButton.setStyle("-fx-background-color: transparent; -fx-border-color: #6B7280; " +
-                                            "-fx-border-radius: 4; -fx-text-fill: #E5E7EB; -fx-font-size: 11px;");
-                        editButton.setPrefWidth(60);
-                        editButton.setPrefHeight(25);
-                        editButton.setOnAction(event -> {
-                            User user = getTableView().getItems().get(getIndex());
-                            System.out.println("Edit button clicked for user: " + user.getUsername());
-                            // Handle edit action
-                            showEditUserDialog(user);
-                        });
-                        
-                        // Configure delete button
-                        deleteButton.setStyle("-fx-background-color: transparent; -fx-shape: " + 
-                                  "\"M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z\"; " +
-                                  "-fx-background-color: #F87171; -fx-min-width: 20; -fx-min-height: 20; " + 
-                                  "-fx-max-width: 20; -fx-max-height: 20;");
-                        deleteButton.setOnAction(event -> {
-                            User user = getTableView().getItems().get(getIndex());
-                            System.out.println("Delete button clicked for user: " + user.getUsername());
-                            // Handle delete action
-                            showDeleteConfirmation(user);
-                        });
-                    }
-                    
-                    @Override
-                    protected void updateItem(Void item, boolean empty) {
-                        super.updateItem(item, empty);
-                        
-                        if (empty) {
-                            setGraphic(null);
-                        } else {
-                            HBox buttons = new HBox(8);
-                            buttons.setAlignment(Pos.CENTER_LEFT);
-                            buttons.getChildren().addAll(editButton, deleteButton);
-                            buttons.setPadding(new Insets(2, 0, 2, 0));
-                            setGraphic(buttons);
-                        }
-                    }
-                };
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    HBox buttons = new HBox(5, editButton, deleteButton);
+                    buttons.setAlignment(Pos.CENTER);
+                    setGraphic(buttons);
+                }
             }
         });
-    }        private void showEditUserDialog(User user) {
-        try {
-            currentEditingUser = user;
+    }
+    private void showEditUserDialog(User user) {
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Edit User Account");
+        dialog.setHeaderText("Editing details for: " + user.getUsername());
+
+        // Siapkan tombol Save dan Cancel
+        ButtonType saveButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
+
+        // Buat layout untuk form
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        TextField usernameField = new TextField(user.getUsername());
+        TextField fullNameField = new TextField(user.getFullName());
+        TextField emailField = new TextField(user.getEmail());
+        ComboBox<String> roleComboBox = new ComboBox<>();
+        roleComboBox.getItems().addAll("admin", "manager", "analyst", "investor");
+        roleComboBox.setValue(user.getRole());
+        PasswordField passwordField = new PasswordField();
+        passwordField.setPromptText("Leave empty to keep current password");
+
+        grid.add(new Label("Username:"), 0, 0);
+        grid.add(usernameField, 1, 0);
+        grid.add(new Label("Full Name:"), 0, 1);
+        grid.add(fullNameField, 1, 1);
+        grid.add(new Label("Email:"), 0, 2);
+        grid.add(emailField, 1, 2);
+        grid.add(new Label("Role:"), 0, 3);
+        grid.add(roleComboBox, 1, 3);
+        grid.add(new Label("New Password:"), 0, 4);
+        grid.add(passwordField, 1, 4);
+
+        dialog.getDialogPane().setContent(grid);
+
+        // Validasi agar tombol Save hanya aktif jika input valid
+        Node saveButton = dialog.getDialogPane().lookupButton(saveButtonType);
+        saveButton.setDisable(false); // Awalnya aktif
+
+        // Tampilkan dialog dan proses hasilnya
+        Optional<ButtonType> result = dialog.showAndWait();
+        if (result.isPresent() && result.get() == saveButtonType) {
+            // Update objek User dengan data baru dari form
+            user.setUsername(usernameField.getText());
+            user.setFullName(fullNameField.getText());
+            user.setEmail(emailField.getText());
+            user.setRole(roleComboBox.getValue());
             
-            // Load the FXML file
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/vunguard/views/EditUserView.fxml"));
-            ScrollPane editDialogRoot = loader.load();
-            
-            // Try different approaches to find the elements
-            // First, try direct lookup on the scene root
-            editUsernameField = (TextField) editDialogRoot.lookup("#usernameField");
-            editFullNameField = (TextField) editDialogRoot.lookup("#fullNameField");
-            editEmailField = (TextField) editDialogRoot.lookup("#emailField");
-            editRoleComboBox = (ComboBox<String>) editDialogRoot.lookup("#roleComboBox");
-            
-            // If direct lookup failed, try looking within the content
-            if (editUsernameField == null) {
-                VBox contentVBox = (VBox) editDialogRoot.getContent();
-                if (contentVBox != null) {
-                    editUsernameField = (TextField) contentVBox.lookup("#usernameField");
-                    editFullNameField = (TextField) contentVBox.lookup("#fullNameField");
-                    editEmailField = (TextField) contentVBox.lookup("#emailField");
-                    editRoleComboBox = (ComboBox<String>) contentVBox.lookup("#roleComboBox");
-                }
+            // Panggil DAO untuk update ke database
+            boolean success = userDAO.updateAccount(user, passwordField.getText());
+
+            if (success) {
+                showAlert(Alert.AlertType.INFORMATION, "Success", "Account updated successfully.");
+                loadAccountsFromDB(); // Muat ulang data tabel
+            } else {
+                showAlert(Alert.AlertType.ERROR, "Database Error", "Failed to update account.");
             }
-            
-            // Debug: Check if elements are found
-            System.out.println("Username field found: " + (editUsernameField != null));
-            System.out.println("Full name field found: " + (editFullNameField != null));
-            System.out.println("Email field found: " + (editEmailField != null));
-            System.out.println("Role ComboBox found: " + (editRoleComboBox != null));
-            
-            // Check if all required elements were found
-            if (editUsernameField == null || editFullNameField == null || 
-                editEmailField == null || editRoleComboBox == null) {
-                throw new RuntimeException("Could not find all required form elements in FXML");
-            }
-            
-            // Set up role ComboBox
-            editRoleComboBox.setItems(FXCollections.observableArrayList("Admin", "Investor", "Manager", "Analyst"));
-            
-            // Populate fields with current user data
-            editUsernameField.setText(user.getUsername());
-            editFullNameField.setText(user.getFullName());
-            editEmailField.setText(user.getEmail());
-            editRoleComboBox.setValue(user.getRole());
-            
-            // Set up button actions
-            Button cancelButton = (Button) editDialogRoot.lookup("#cancelButton");
-            Button saveButton = (Button) editDialogRoot.lookup("#saveButton");
-            
-            if (cancelButton == null) {
-                VBox contentVBox = (VBox) editDialogRoot.getContent();
-                if (contentVBox != null) {
-                    cancelButton = (Button) contentVBox.lookup("#cancelButton");
-                    saveButton = (Button) contentVBox.lookup("#saveButton");
-                }
-            }
-            
-            if (cancelButton != null && saveButton != null) {
-                cancelButton.setOnAction(this::handleCancelEditAction);
-                saveButton.setOnAction(this::handleSaveEditAction);
-            }
-            
-            // Create and show the dialog
-            editDialogStage = new Stage();
-            editDialogStage.setTitle("Edit User - " + user.getUsername());
-            editDialogStage.initModality(Modality.APPLICATION_MODAL);
-            editDialogStage.setScene(new Scene(editDialogRoot));
-            editDialogStage.setResizable(false);
-            
-            // Center the dialog
-            editDialogStage.centerOnScreen();
-            editDialogStage.showAndWait();
-            
-        } catch (IOException e) {
-            System.err.println("Error loading edit user dialog: " + e.getMessage());
-            e.printStackTrace();
-            
-            // Fallback to simple alert if FXML loading fails
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Error");
-            alert.setHeaderText("Failed to load edit dialog");
-            alert.setContentText("Could not load the edit user interface. Please try again.");
-            alert.showAndWait();
         }
     }
     
@@ -391,17 +335,28 @@ public class AccountsController {
     }
     
     private void showDeleteConfirmation(User user) {
-        // Show confirmation dialog
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Delete User");
-        alert.setHeaderText("Delete User " + user.getUsername());
-        alert.setContentText("Are you sure you want to delete this user? This action cannot be undone.");
+        alert.setHeaderText("Are you sure you want to delete " + user.getUsername() + "?");
+        alert.setContentText("This action cannot be undone.");
         
-        alert.showAndWait().ifPresent(result -> {
-            if (result == ButtonType.OK) {
-                // Delete the user
-                userList.remove(user);
+        Optional<ButtonType> result = alert.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            boolean success = userDAO.deleteAccount(user.getId());
+            if (success) {
+                showAlert(Alert.AlertType.INFORMATION, "Success", "User has been deleted.");
+                loadAccountsFromDB(); // Refresh tabel
+            } else {
+                showAlert(Alert.AlertType.ERROR, "Database Error", "Failed to delete user.");
             }
-        });
+        }
+    }
+
+    private void showAlert(Alert.AlertType type, String title, String message) {
+        Alert alert = new Alert(type);
+        alert.setTitle("Account Management");
+        alert.setHeaderText(title);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 } 

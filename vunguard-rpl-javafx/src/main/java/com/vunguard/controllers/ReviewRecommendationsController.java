@@ -21,6 +21,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.vunguard.dao.RecommendationDAO;
+
 public class ReviewRecommendationsController {
 
     @FXML
@@ -44,15 +46,23 @@ public class ReviewRecommendationsController {
 
     private ObservableList<Recommendation> allRecommendations = FXCollections.observableArrayList();
     private FilteredList<Recommendation> filteredRecommendations;
+    private RecommendationDAO recommendationDAO;
 
     @FXML
     private void initialize() {
         System.out.println("ReviewRecommendationsController initialized");
+        this.recommendationDAO = new RecommendationDAO();
         createTable();
         setupTable();
         setupFilters();
-        loadSampleData();
         setupActionButtons();
+        loadRecommendationsFromDB();
+    }
+
+    public void loadRecommendationsFromDB() {
+        allRecommendations.setAll(recommendationDAO.getAllRecommendations());
+        // Set item ke tabel, filter bisa diterapkan di sini jika perlu
+        recommendationsTable.setItems(allRecommendations);
     }
 
     private void createTable() {
@@ -250,15 +260,19 @@ public class ReviewRecommendationsController {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Approve Recommendation");
         alert.setHeaderText("Approve Recommendation");
-        alert.setContentText("Are you sure you want to approve this " + recommendation.getType() + 
-                           " recommendation for " + recommendation.getProductName() + "?");
+        alert.setContentText("Are you sure you want to approve this " + recommendation.getType() + " recommendation for " + recommendation.getProductName() + "?");
         
         alert.showAndWait().ifPresent(response -> {
             if (response == ButtonType.OK) {
-                recommendation.setStatus("APPROVED");
-                recommendation.setUpdated(LocalDateTime.now());
-                recommendationsTable.refresh();
-                showAlert("Success", "Recommendation approved successfully!", Alert.AlertType.INFORMATION);
+                // Panggil DAO untuk update status
+                boolean success = recommendationDAO.updateStatus(recommendation.getId(), "APPROVED");
+                if (success) {
+                    recommendation.setStatus("APPROVED"); // Update UI
+                    recommendationsTable.refresh();
+                    showAlert("Success", "Recommendation approved.", Alert.AlertType.INFORMATION);
+                } else {
+                    showAlert("Error", "Failed to update status.", Alert.AlertType.ERROR);
+                }
             }
         });
     }
@@ -267,9 +281,8 @@ public class ReviewRecommendationsController {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Reject Recommendation");
         alert.setHeaderText("Reject Recommendation");
-        alert.setContentText("Are you sure you want to reject this " + recommendation.getType() + 
-                           " recommendation for " + recommendation.getProductName() + "?");
-        
+        alert.setContentText("Are you sure you want to reject this " + recommendation.getType() + " recommendation for " + recommendation.getProductName() + "?");
+        boolean success = recommendationDAO.updateStatus(recommendation.getId(), "REJECTED");
         alert.showAndWait().ifPresent(response -> {
             if (response == ButtonType.OK) {
                 recommendation.setStatus("REJECTED");
@@ -278,48 +291,6 @@ public class ReviewRecommendationsController {
                 showAlert("Success", "Recommendation rejected successfully!", Alert.AlertType.INFORMATION);
             }
         });
-    }
-
-    private void loadSampleData() {
-        List<Recommendation> sampleRecommendations = new ArrayList<>();
-        
-        sampleRecommendations.add(new Recommendation(
-            "REC001", "Real Estate Income Trust", "budi_analyst", "SELL", 15.00, 10.00, 3, "REJECTED",
-            LocalDateTime.now().minusDays(25), "Medium Term",
-            "The real estate market shows signs of overvaluation in key sectors...",
-            "Technical indicators show bearish divergence...",
-            "Strong fundamentals but market timing concerns...",
-            "Interest rate risk and liquidity concerns..."
-        ));
-        
-        sampleRecommendations.add(new Recommendation(
-            "REC002", "AI & Robotics Fund", "budi_analyst", "BUY", 13.00, 11.00, 3, "IMPLEMENTED",
-            LocalDateTime.now().minusDays(25), "Long Term",
-            "AI technology adoption accelerating across industries...",
-            "Strong momentum indicators and volume confirmation...",
-            "Growing market demand and innovation pipeline...",
-            "Technology sector volatility and regulatory changes..."
-        ));
-        
-        sampleRecommendations.add(new Recommendation(
-            "REC003", "Clean Energy ETF", "sarah_analyst", "BUY", 28.50, 25.00, 4, "PENDING",
-            LocalDateTime.now().minusDays(2), "Medium Term",
-            "Government policies favoring renewable energy transition...",
-            "Breakout above key resistance levels...",
-            "Strong ESG demand and policy support...",
-            "Commodity price volatility and supply chain issues..."
-        ));
-        
-        sampleRecommendations.add(new Recommendation(
-            "REC004", "Emerging Markets Bond", "david_analyst", "SELL", 45.00, 48.00, 2, "PENDING",
-            LocalDateTime.now().minusDays(1), "Short Term",
-            "Currency headwinds and geopolitical tensions rising...",
-            "Technical breakdown below support...",
-            "Weak economic fundamentals in key markets...",
-            "High currency risk and political instability..."
-        ));
-        
-        allRecommendations.addAll(sampleRecommendations);
     }
 
     private void showAlert(String title, String message, Alert.AlertType type) {

@@ -1,5 +1,8 @@
 package com.vunguard.controllers;
 
+import com.vunguard.dao.DashboardDAO;
+import com.vunguard.models.User;
+import com.vunguard.services.AuthService;
 import com.vunguard.models.Portfolio;
 import com.vunguard.models.Transaction;
 import javafx.fxml.FXML;
@@ -29,6 +32,9 @@ import java.util.Locale;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.text.NumberFormat;
+import java.util.Locale;
+import java.util.Map;
 
 public class DashboardController {
 
@@ -50,8 +56,11 @@ public class DashboardController {
     @FXML private Button topUpButton;
     @FXML private Button cancelButton;
 
+    private DashboardDAO dashboardDAO;
+
     private Stage topUpStage;    @FXML
     private void initialize() {
+        this.dashboardDAO = new DashboardDAO();
         System.out.println("DashboardController initialized");
         if (sidebarViewController != null) {
             System.out.println("SidebarView Controller injected into DashboardController");
@@ -83,63 +92,31 @@ public class DashboardController {
         // Create dashboard content programmatically
         setupDashboard();
     }
-      private void setupDashboard() {
-        // Check if contentArea is properly injected
-        if (contentArea == null) {
-            System.err.println("contentArea is null! FXML mapping issue.");
+    private void setupDashboard() {
+        contentArea.getChildren().clear();
+        User currentUser = AuthService.getCurrentUser();
+
+        if (currentUser == null) {
+            contentArea.getChildren().add(new Label("Please login to view the dashboard."));
             return;
         }
-        
-        // Clear existing content to avoid duplication
-        contentArea.getChildren().clear();
-        
-        // Create title and welcome message
+
+        // Ambil data ringkasan dari DAO
+        Map<String, Number> summary = dashboardDAO.getDashboardSummary(currentUser.getId());
+
+        // Setup UI dengan data live
         Label titleLabel = new Label("Dashboard");
         titleLabel.setStyle("-fx-font-size: 32px; -fx-text-fill: white; -fx-font-weight: bold;");
-        
-        Label welcomeLabel = new Label("Welcome! Here's an overview of your investment portfolio.");
+        Label welcomeLabel = new Label("Welcome, " + currentUser.getFullName() + "!");
         welcomeLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #A0A0A0;");
-        
-        // Create button for "Top Up Funds"
-        Button topUpFundsButton = new Button("Top Up Funds");
-        topUpFundsButton.setStyle("-fx-background-color: #0A84FF; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8; -fx-padding: 8 15;");
-        
-        // Add click event handler for "Top Up Funds" button
-        topUpFundsButton.setOnAction(event -> {
-            System.out.println("Top Up Funds button clicked");
-            showTopUpDialog();
-        });
-        
-        // Add button to right side of header
-        HBox headerActions = new HBox();
-        headerActions.setAlignment(Pos.CENTER_RIGHT);
-        headerActions.getChildren().add(topUpFundsButton);
-        
-        // Push it to the right of existing header content
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-        
-        // Create header container
-        HBox headerContainer = new HBox(10);
-        headerContainer.getChildren().add(spacer);
-        headerContainer.getChildren().add(headerActions);
-        headerContainer.setPadding(new Insets(0, 0, 10, 0)); // Add some padding at the bottom
-        
-        // Add title, welcome message, and header actions
-        contentArea.getChildren().addAll(titleLabel, welcomeLabel, headerContainer);
-        
-        // Create all rows
-        HBox topRow = createTopRow();
-        HBox middleRow = createMiddleRow();
-        HBox bottomRow = createBottomRow();
-        
-        // Add spacing between rows
-        VBox.setMargin(topRow, new Insets(10, 0, 20, 0));
-        VBox.setMargin(middleRow, new Insets(0, 0, 20, 0));
-        
-        // Add rows to content area
-        contentArea.getChildren().addAll(topRow, middleRow, bottomRow);
-    }// Method to show the top-up dialog
+
+        // ... (Logika pembuatan header actions)
+
+        contentArea.getChildren().addAll(titleLabel, welcomeLabel, createHeaderActions());
+        HBox topRow = createTopRow(summary); // Buat top row dengan data
+        contentArea.getChildren().addAll(topRow, createMiddleRow(), createBottomRow());
+    }
+
     private void showTopUpDialog() {
         try {
             // Load the FXML file
@@ -466,24 +443,23 @@ public class DashboardController {
         alert.showAndWait();
     }
     
-    private HBox createTopRow() {
-        HBox row = new HBox(20); // 20px spacing between cards
+    private HBox createTopRow(Map<String, Number> summary) {
+        HBox row = new HBox(20);
+        NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.US);
+
+        double totalValue = summary.getOrDefault("totalValue", 0).doubleValue();
+        double averageReturn = summary.getOrDefault("averageReturn", 0).doubleValue();
+        int activeProducts = summary.getOrDefault("activeProducts", 0).intValue();
+        int recentTransactions = summary.getOrDefault("recentTransactions", 0).intValue();
+
+        // Buat kartu-kartu dengan data dari summary map
+        VBox card1 = createInfoCard("Total Portfolio Value", currencyFormat.format(totalValue), "", null);
+        VBox card2 = createInfoCard("Average Return", String.format("%+.2f%%", averageReturn), "Across all portfolios", null);
+        VBox card3 = createInfoCard("Active Products", String.valueOf(activeProducts), "Different investment products", null);
+        VBox card4 = createInfoCard("Recent Transactions", String.valueOf(recentTransactions), "In the last 30 days", null);
         
-        // Create the four cards
-        VBox card1 = createInfoCard("Total Portfolio Value", "$0.00", "+0.00% from last month", "#4CAF50");
-        VBox card2 = createInfoCard("Average Return", "+0.00%", "Across all portfolios", null);
-        VBox card3 = createInfoCard("Active Products", "0", "Different investment products", null);
-        VBox card4 = createInfoCard("Recent Transactions", "0", "In the last 30 days", null);
-        
-        // Set equal growth for all cards
-        HBox.setHgrow(card1, Priority.ALWAYS);
-        HBox.setHgrow(card2, Priority.ALWAYS);
-        HBox.setHgrow(card3, Priority.ALWAYS);
-        HBox.setHgrow(card4, Priority.ALWAYS);
-        
-        // Add cards to row
+        // ... (tambahkan kartu ke row)
         row.getChildren().addAll(card1, card2, card3, card4);
-        
         return row;
     }
     

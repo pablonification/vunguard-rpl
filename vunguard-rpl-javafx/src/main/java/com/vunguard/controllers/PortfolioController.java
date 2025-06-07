@@ -21,6 +21,16 @@ import java.text.NumberFormat;
 import java.util.Locale;
 import java.util.Optional;
 import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+package com.vunguard.controllers;
+
+import com.vunguard.models.Portfolio;
+import com.vunguard.models.User;
+import com.vunguard.services.AuthService;
+import com.vunguard.dao.PortfolioDAO;
+import com.vunguard.dao.UserDAO;
 
 public class PortfolioController {
 
@@ -67,7 +77,9 @@ public class PortfolioController {
     private SidebarController sidebarViewController;
 
     // Sample data for demonstration
-    private ObservableList<Portfolio> portfolioList = FXCollections.observableArrayList();
+    private ObservableList<Portfolio> portfolioList;
+
+    private PortfolioDAO portfolioDAO;
     
     // Current user role simulation (in real app, this would come from auth system)
     private String currentUserRole = "manager"; // Can be: "investor", "manager", "analyst", "admin"
@@ -80,9 +92,16 @@ public class PortfolioController {
 
     private Stage createPortfolioStage;
 
+    private ObservableList<Portfolio> portfolioList;
+    private PortfolioDAO portfolioDAO;
+
     @FXML
     private void initialize() {
         System.out.println("PortfolioController initialized");
+        this.portfolioDAO = new PortfolioDAO();
+        this.userDAO = new UserDAO(); // Inisialisasi UserDAO
+        this.portfolioList = FXCollections.observableArrayList();
+
 
         if (sidebarViewController != null) {
             System.out.println("SidebarView Controller injected into PortfolioController");
@@ -98,15 +117,10 @@ public class PortfolioController {
 
         // Setup role-based UI
         setupRoleBasedUI();
-        
-        // Configure columns
         setupTableColumns();
-
-        // Setup button events
-        createPortfolioButton.setOnAction(event -> {
-            System.out.println("Create Portfolio button clicked");
-            showCreatePortfolioDialog();
-        });
+        createPortfolioButton.setOnAction(event -> showCreatePortfolioDialog());
+        setupInvestorSelection();
+        portfolioTable.setItems(portfolioList);
 
         // Setup investor selection for managers/analysts
         setupInvestorSelection();
@@ -114,11 +128,31 @@ public class PortfolioController {
         // Set the data to the table
         portfolioTable.setItems(portfolioList);
         
-        // Load sample data
-        loadSamplePortfolios();
+        loadPortfoliosFromDB();
+
+        if (currentUserRole.equals("manager") || currentUserRole.equals("admin") || currentUserRole.equals("analyst")) {
+            // Jika manager, muat data untuk investor pertama di daftar sebagai default
+            String defaultInvestor = investorSelectionComboBox.getItems().get(0);
+            investorSelectionComboBox.setValue(defaultInvestor);
+            loadPortfoliosForInvestor(defaultInvestor);
+        } else {
+            // Jika investor, muat datanya sendiri
+            loadPortfoliosForCurrentUser();
+        }
     }
-
-
+    
+    private void loadPortfoliosForCurrentUser() {
+        User currentUser = AuthService.getCurrentUser();
+        if (currentUser != null) {
+            System.out.println("Loading portfolios for current user ID: " + currentUser.getId());
+            ObservableList<Portfolio> portfolios = portfolioDAO.getPortfoliosForAccount(currentUser.getId());
+            portfolioList.setAll(portfolios);
+            System.out.println("Loaded " + portfolios.size() + " portfolios from database.");
+        } else {
+            System.err.println("No user logged in, cannot load portfolios.");
+            portfolioList.clear();
+        }
+    }
 
     private void setupTableColumns() {
         // Setup cell value factories
@@ -547,37 +581,54 @@ private void debugPrintAllNodes(javafx.scene.Node node, int depth) {
         }
     }
     
-    private void loadPortfoliosForInvestor(String investor) {
-        // Clear current portfolios
+    private void loadPortfoliosForInvestor(String investorString) {
         portfolioList.clear();
-        
-        // Load sample data based on selected investor
-        if (investor.contains("John Doe")) {
-            loadSamplePortfolios();
-        } else if (investor.contains("Jane Smith")) {
-            portfolioList.addAll(
-                new Portfolio("PF004", "Jane's Growth Portfolio", 25000.00, 5000.00, 8.7, 12),
-                new Portfolio("PF005", "Jane's Income Portfolio", 18000.00, 2000.00, 4.2, 8)
-            );
+        if (investorString == null || investorString.isEmpty()) return;
+
+        // Ekstrak username dari string menggunakan regex
+        Pattern pattern = Pattern.compile("\\(([^)]+)\\)");
+        Matcher matcher = pattern.matcher(investorString);
+        String username = "";
+
+        if(matcher.find()) {
+            // Username adalah email dalam kasus ini, kita perlu query berdasarkan email
+            // Mari kita asumsikan username ada di antara tanda kurung untuk saat ini.
+            // Jika formatnya 'Nama (username)', kita perlu menyesuaikan.
+            // Dari data, tampaknya username bisa jadi email. mari kita cari berdasarkan email.
+            // Untuk simple, kita asumsikan formatnya "Full Name (username@email.com)"
+            // Kita akan ambil emailnya.
+            String email = matcher.group(1);
+            System.out.println("Extracted email/username: " + email);
+            
+            // Logika untuk mendapatkan ID dari DB berdasarkan email/username.
+            // Kita akan buat metode baru di UserDAO untuk ini.
+            Optional<Integer> userId = userDAO.findUserIdByUsername(email); // Asumsi email adalah username
+
+            if (userId.isPresent()) {
+                System.out.println("Found user ID: " + userId.get() + " for investor: " + investorString);
+                ObservableList<Portfolio> portfolios = portfolioDAO.getPortfoliosForAccount(userId.get());
+                portfolioList.setAll(portfolios);
+                System.out.println("Loaded " + portfolios.size() + " portfolios for " + investorString);
+            } else {
+                System.out.println("User not found for: " + investorString);
+            }
         } else {
-            // Load default empty or other investor data
-            portfolioList.addAll(
-                new Portfolio("PF006", "Sample Portfolio", 10000.00, 1000.00, 2.5, 5)
-            );
+            System.err.println("Could not parse username/email from: " + investorString);
         }
-        
-        System.out.println("Loaded " + portfolioList.size() + " portfolios for " + investor);
     }
-    
-    private void loadSamplePortfolios() {
-        portfolioList.clear();
-        
-        portfolioList.addAll(
-            new Portfolio("PF001", "Conservative Growth", 12000.00, 3000.00, 5.2, 8),
-            new Portfolio("PF002", "Tech Aggressive", 8000.00, 750.00, -2.1, 5),
-            new Portfolio("PF003", "Balanced Fund", 18500.00, 4250.00, 7.8, 12)
-        );
-        
-        System.out.println("Sample portfolios loaded. Total count: " + portfolioList.size());
+
+    private void loadPortfoliosFromDB() {
+        User currentUser = AuthService.getCurrentUser();
+        if (currentUser != null) {
+            System.out.println("Loading portfolios for account ID: " + currentUser.getId());
+            // Menggunakan DAO untuk mengambil data
+            this.portfolioList = portfolioDAO.getPortfoliosForAccount(currentUser.getId());
+            portfolioTable.setItems(this.portfolioList);
+            System.out.println("Loaded " + portfolioList.size() + " portfolios from database.");
+        } else {
+            System.err.println("No user logged in, cannot load portfolios.");
+            // Kosongkan tabel jika tidak ada user
+            portfolioTable.getItems().clear();
+        }
     }
 }

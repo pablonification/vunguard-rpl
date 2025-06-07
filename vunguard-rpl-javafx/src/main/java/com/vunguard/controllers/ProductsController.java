@@ -1,5 +1,6 @@
 package com.vunguard.controllers;
 
+import com.vunguard.dao.ProductDAO;
 import com.vunguard.models.Product;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -43,6 +44,7 @@ public class ProductsController {
     // Sample product data for demonstration
     private final ObservableList<Product> productList = FXCollections.observableArrayList();
     private TableView<Product> productsTable;
+    private ProductDAO productDAO;
 
     // Add Product Dialog Fields
     @FXML private TextField codeField;
@@ -58,6 +60,8 @@ public class ProductsController {
     @FXML
     private void initialize() {
         System.out.println("ProductsController initialized");
+        this.productDAO = new ProductDAO();
+        this.productList = FXCollections.observableArrayList();
         
         if (sidebarViewController != null) {
             System.out.println("SidebarView Controller injected into ProductsController");
@@ -75,11 +79,21 @@ public class ProductsController {
             scrollPane.getStyleClass().add("products-scroll-pane");
         }
         
-        // Initialize sample products
-        initializeSampleProducts();
-        
         // Create products content
         setupProductsView();
+
+        loadProductsFromDB();
+    }
+
+    private void loadProductsFromDB() {
+        // Panggil metode dari DAO
+        ObservableList<Product> productsFromDb = productDAO.getProducts();
+        this.productList.setAll(productsFromDb); // Update list
+        
+        if (productsTable != null) {
+            productsTable.setItems(this.productList); // Set data ke tabel
+        }
+        System.out.println("Loaded " + this.productList.size() + " products from the database.");
     }
 
     private void setupProductsView() {
@@ -208,18 +222,6 @@ public class ProductsController {
         });
     }
 
-    private void initializeSampleProducts() {
-        productList.clear();
-        
-        productList.addAll(
-            new Product("1", "TGF001", "Tech Growth Fund", "A fund focused on high-growth technology companies", "Growth", "High"),
-            new Product("2", "GBF002", "Global Bond Fund", "A diversified portfolio of government and corporate bonds", "Income", "Low"),
-            new Product("3", "EME003", "Emerging Markets ETF", "Exposure to high-growth emerging market economies", "Growth", "High"),
-            new Product("4", "INC004", "Income Fund", "Focus on dividend-paying stocks and fixed income", "Income", "Medium"),
-            new Product("5", "HIF005", "Healthcare Innovation Fund", "Investing in breakthrough healthcare technologies", "Growth", "Medium")
-        );
-    }
-
     private void showAddProductDialog() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/vunguard/views/CreateProductView.fxml"));
@@ -259,28 +261,27 @@ public class ProductsController {
         }
     }
 
-    @FXML
+   @FXML
     private void handleSaveAction(ActionEvent event) {
         if (validateInput()) {
-            // Create new product
-            String id = String.valueOf(productList.size() + 1);
             String code = codeField.getText().trim();
             String name = nameField.getText().trim();
             String description = descriptionField.getText().trim();
             String strategy = strategyComboBox.getValue();
             String riskLevel = riskLevelComboBox.getValue();
             
-            Product newProduct = new Product(id, code, name, description, strategy, riskLevel);
-            productList.add(newProduct);
+            // 5. Gunakan DAO untuk menyimpan data ke database
+            boolean success = productDAO.createProduct(code, name, description, strategy, riskLevel);
             
-            // Refresh table
-            productsTable.refresh();
-            
-            showAlert(AlertType.INFORMATION, "Success", "Product has been added successfully!");
-            
-            // Close dialog
-            if (addProductStage != null) {
-                addProductStage.close();
+            if (success) {
+                // Jika berhasil, muat ulang data untuk memperbarui tabel
+                loadProductsFromDB();
+                showAlert(AlertType.INFORMATION, "Success", "Product has been added successfully!");
+                if (addProductStage != null) {
+                    addProductStage.close();
+                }
+            } else {
+                showAlert(AlertType.ERROR, "Database Error", "Failed to add product. The product code might already exist.");
             }
         }
     }

@@ -1,6 +1,10 @@
 package com.vunguard.controllers;
 
 import com.vunguard.models.Transaction;
+import com.vunguard.models.User;
+import com.vunguard.services.AuthService;
+import com.vunguard.dao.TransactionDAO;
+import com.vunguard.dao.UIDataDAO;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -25,6 +29,12 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 public class TransactionController {
+
+    @FXML 
+    private TableView<Transaction> transactionTable;
+
+    @FXML 
+    private Button newTransactionButton;
 
     @FXML
     private VBox contentArea;
@@ -89,9 +99,8 @@ public class TransactionController {
     private String currentUserRole = "manager"; // Can be: "investor", "manager", "analyst", "admin"
 
     // Create Transaction Dialog Fields - These will be injected when dialog is loaded
-    @FXML private ComboBox<String> investorComboBox;
-    @FXML private ComboBox<String> portfolioComboBox;
-    @FXML private ComboBox<String> productComboBox;
+   @FXML private ComboBox<UIDataDAO.PortfolioInfo> portfolioComboBox;
+    @FXML private ComboBox<UIDataDAO.PortfolioAssetInfo> productComboBox;
     @FXML private ComboBox<String> typeComboBox;
     @FXML private TextField quantityField;
     @FXML private TextField priceField;
@@ -101,9 +110,16 @@ public class TransactionController {
     @FXML private Button cancelButton;
 
     private Stage createTransactionStage;
+    private TransactionDAO transactionDAO;
+    private UIDataDAO uiDataDAO;
+    private ObservableList<Transaction> transactionList = FXCollections.observableArrayList();
+    private ObservableList<Transaction> filteredList = FXCollections.observableArrayList();
+    private String currentUserRole = "manager"; // Simulasi peran
 
     @FXML
     private void initialize() {
+        this.transactionDAO = new TransactionDAO();
+        this.uiDataDAO = new UIDataDAO();
         System.out.println("TransactionController initialized");
 
         if (sidebarViewController != null) {
@@ -129,17 +145,23 @@ public class TransactionController {
         setupInvestorSelection();
 
         // Setup button events
-        newTransactionButton.setOnAction(event -> {
-            System.out.println("New Transaction button clicked");
-            showCreateTransactionDialog();
-        });
+        newTransactionButton.setOnAction(event -> showCreateTransactionDialog());
 
         // Load sample data
-        loadSampleTransactions();
-
-        // Set the data to the table
-        filteredList.addAll(transactionList);
+        loadTransactionsForCurrentUser();
+        filteredList.setAll(transactionList);
         transactionTable.setItems(filteredList);
+    }
+
+    private void loadTransactionsForCurrentUser() {
+        User currentUser = AuthService.getCurrentUser();
+        if (currentUser != null) {
+            ObservableList<Transaction> transactions = transactionDAO.getTransactionsForAccount(currentUser.getId());
+            transactionList.setAll(transactions);
+            applyFilters(); // Terapkan filter yang mungkin aktif
+        } else {
+            transactionList.clear();
+        }
     }
 
     private void initializeSampleData() {
@@ -343,63 +365,50 @@ public class TransactionController {
         // applyFilters() will be called automatically due to the listeners
     }
 
+    private void setupDialogWithLiveData() {
+        User currentUser = AuthService.getCurrentUser();
+        if (currentUser == null) return;
+        
+        // 1. Isi ComboBox Portofolio
+        List<UIDataDAO.PortfolioInfo> portfolios = uiDataDAO.getPortfolioAndAssetDataForAccount(currentUser.getId());
+        portfolioComboBox.setItems(FXCollections.observableArrayList(portfolios));
+        
+        // 2. Atur ComboBox Produk agar berubah berdasarkan Portofolio yang dipilih
+        portfolioComboBox.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+            productComboBox.setDisable(newVal == null);
+            if (newVal != null) {
+                productComboBox.setItems(FXCollections.observableArrayList(newVal.assets));
+            }
+        });
+
+        // 3. Sisanya (tipe, validasi, dll.)
+        typeComboBox.getItems().setAll("buy", "sell");
+        typeComboBox.setValue("buy");
+        setupNewInputValidation();
+    }
+
+
     private void showCreateTransactionDialog() {
         try {
-            // Load the CreateTransactionView FXML
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/vunguard/views/CreateTransactionView.fxml"));
-            
-            // Set this controller as the controller for the FXML
             loader.setController(this);
-            
             Parent root = loader.load();
             
-            // The @FXML fields should now be automatically injected
-            // Let's verify they were injected properly
-            if (investorComboBox == null || portfolioComboBox == null || productComboBox == null ||
-                typeComboBox == null || quantityField == null || priceField == null || 
-                totalField == null || notesField == null || createButton == null || cancelButton == null) {
-                System.err.println("FXML injection failed, trying manual lookup...");
-                initializeCreateTransactionDialog(root);
-            } else {
-                System.out.println("FXML injection successful!");
-                setupCreateTransactionDialog();
-            }
+            // Setup dialog dengan data dari DB
+            setupDialogWithLiveData();
             
-            // Create and show the dialog
             createTransactionStage = new Stage();
             createTransactionStage.setTitle("Create New Transaction");
             createTransactionStage.initModality(Modality.WINDOW_MODAL);
             createTransactionStage.initOwner(newTransactionButton.getScene().getWindow());
-            
-            // Set icon
-            try {
-                createTransactionStage.getIcons().add(new javafx.scene.image.Image(getClass().getResourceAsStream("/com/vunguard/assets/logo_white.png")));
-            } catch (Exception e) {
-                System.err.println("Could not load dialog icon: " + e.getMessage());
-            }
-            
+            // ... (setup scene dan style lainnya) ...
             Scene scene = new Scene(root, 500, 600);
-            
-            // Load CSS
-            try {
-                String css = getClass().getResource("/com/vunguard/styles/application.css").toExternalForm();
-                scene.getStylesheets().add(css);
-            } catch (NullPointerException e) {
-                System.err.println("Could not load CSS file: " + e.getMessage());
-            }
-            
+            scene.getStylesheets().add(getClass().getResource("/com/vunguard/styles/application.css").toExternalForm());
             createTransactionStage.setScene(scene);
-            createTransactionStage.setResizable(false);
             createTransactionStage.showAndWait();
-            
         } catch (IOException e) {
-            System.err.println("Error loading CreateTransactionView: " + e.getMessage());
             e.printStackTrace();
             showAlert("Error opening create transaction dialog: " + e.getMessage(), Alert.AlertType.ERROR);
-        } catch (Exception e) {
-            System.err.println("Unexpected error: " + e.getMessage());
-            e.printStackTrace();
-            showAlert("Unexpected error opening dialog: " + e.getMessage(), Alert.AlertType.ERROR);
         }
     }
 
@@ -562,19 +571,26 @@ public class TransactionController {
     // FXML Event Handlers for Create Transaction Dialog
     @FXML
     private void handleCreateAction(ActionEvent event) {
-        if (validateCreateTransactionInput()) {
-            Transaction transaction = createTransactionFromInput();
-            if (transaction != null) {
-                transactionList.add(transaction);
-                applyFilters(); // Reapply filters to ensure new transaction shows if it meets criteria
-                showSuccessAlert("Transaction '" + transaction.getId() + "' created successfully!");
-                
-                // Log the creation
-                System.out.println("Transaction created: " + transaction.getId());
-                System.out.println("Type: " + transaction.getType() + ", Amount: $" + String.format("%.2f", transaction.getAmount()));
-                
-                // Close the dialog
+         if (validateCreateTransactionInput()) {
+            UIDataDAO.PortfolioInfo portfolio = portfolioComboBox.getValue();
+            UIDataDAO.PortfolioAssetInfo asset = productComboBox.getValue();
+            
+            boolean success = transactionDAO.createTransaction(
+                portfolio.portfolioId,
+                asset.assetId,
+                typeComboBox.getValue(),
+                Integer.parseInt(quantityField.getText()),
+                Double.parseDouble(priceField.getText()),
+                LocalDateTime.now(), // Seharusnya menggunakan date picker
+                notesField.getText()
+            );
+
+            if (success) {
+                loadTransactionsForCurrentUser(); // Muat ulang data tabel
+                showSuccessAlert("Transaction created successfully!");
                 closeCreateTransactionDialog();
+            } else {
+                showAlert("Failed to create transaction.", Alert.AlertType.ERROR);
             }
         }
     }

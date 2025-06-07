@@ -1,5 +1,7 @@
 package com.vunguard.controllers;
 
+import com.vunguard.dao.RecommendationDAO;
+import com.vunguard.services.AuthService;
 import com.vunguard.models.Recommendation;
 import com.vunguard.models.Product;
 import javafx.fxml.FXML;
@@ -56,10 +58,12 @@ public class CreateRecommendationController {
     private InvestmentRecommendationsController parentController;
     private Recommendation editingRecommendation;
     private boolean isEditing = false;
+    private RecommendationDAO recommendationDAO;
 
     @FXML
     private void initialize() {
         System.out.println("CreateRecommendationController initialized");
+        this.recommendationDAO = new RecommendationDAO();
         setupComboBoxes();
         setupValidation();
         setDefaultValues();
@@ -162,25 +166,22 @@ public class CreateRecommendationController {
     @FXML
     private void handleCreate() {
         if (!validateForm()) {
-            return;
-        }
+            if (!validateForm()) return;
 
         try {
             Recommendation recommendation = buildRecommendation();
+            boolean success = recommendationDAO.createRecommendation(recommendation); // Panggil DAO
             
-            if (isEditing) {
-                parentController.updateRecommendation(editingRecommendation, recommendation);
-                showAlert("Success", "Recommendation updated successfully!", Alert.AlertType.INFORMATION);
-            } else {
-                parentController.addRecommendation(recommendation);
+            if (success) {
                 showAlert("Success", "Recommendation created successfully!", Alert.AlertType.INFORMATION);
+                // Refresh data di parent controller
+                if (parentController != null) parentController.loadRecommendationsFromDB();
+                handleClose();
+            } else {
+                showAlert("Error", "Failed to save recommendation to the database.", Alert.AlertType.ERROR);
             }
-            
-            handleClose();
-            
         } catch (Exception e) {
-            e.printStackTrace();
-            showAlert("Error", "Failed to save recommendation: " + e.getMessage(), Alert.AlertType.ERROR);
+            // ... (error handling) ...
         }
     }
 
@@ -234,31 +235,42 @@ public class CreateRecommendationController {
     }
 
     private Recommendation buildRecommendation() {
-        String id = isEditing ? editingRecommendation.getId() : "REC" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-        String productName = productComboBox.getSelectionModel().getSelectedItem();
-        String analystName = "current_analyst"; // Would come from session
-        String type = typeComboBox.getSelectionModel().getSelectedItem();
-        double targetPrice = Double.parseDouble(targetPriceField.getText().trim());
+        // Tentukan ID: gunakan yang sudah ada jika edit, buat baru jika tidak.
+        String id = isEditing ? editingRecommendation.getId() : "REC-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+
+        // Ambil nama analis dari user yang sedang login
+        User currentUser = AuthService.getCurrentUser();
+        String analystName = (currentUser != null) ? currentUser.getUsername() : "unknown_analyst";
+        
+        // Ambil nilai dari setiap field di UI
+        String productName = productComboBox.getValue();
+        String type = typeComboBox.getValue();
         double currentPrice = Double.parseDouble(currentPriceField.getText().trim());
-        
-        // Convert confidence stars to number
-        String confidenceStars = confidenceComboBox.getSelectionModel().getSelectedItem();
-        int confidence = (int) confidenceStars.chars().filter(ch -> ch == '★').count();
-        
-        String status = isEditing ? editingRecommendation.getStatus() : "PENDING";
-        LocalDateTime created = isEditing ? editingRecommendation.getCreated() : LocalDateTime.now();
-        String timeframe = timeframeComboBox.getSelectionModel().getSelectedItem();
+        double targetPrice = Double.parseDouble(targetPriceField.getText().trim());
+        String timeframe = timeframeComboBox.getValue();
         String rationale = rationaleTextArea.getText().trim();
         String technicalAnalysis = technicalAnalysisTextArea.getText().trim();
         String fundamentalAnalysis = fundamentalAnalysisTextArea.getText().trim();
         String risks = risksTextArea.getText().trim();
+        
+        // Konversi rating bintang (String) menjadi angka (int)
+        String confidenceStars = confidenceComboBox.getValue();
+        int confidence = (int) confidenceStars.chars().filter(ch -> ch == '★').count();
 
+        // Tentukan status: PENDING untuk baru, atau status lama jika edit
+        String status = isEditing ? editingRecommendation.getStatus() : "PENDING";
+        
+        // Tentukan tanggal pembuatan: tanggal lama jika edit, atau sekarang jika baru
+        LocalDateTime createdAt = isEditing ? editingRecommendation.getCreated() : LocalDateTime.now();
+
+        // Buat objek Recommendation baru
         Recommendation recommendation = new Recommendation(
             id, productName, analystName, type, targetPrice, currentPrice, 
-            confidence, status, created, timeframe, rationale, 
+            confidence, status, createdAt, timeframe, rationale, 
             technicalAnalysis, fundamentalAnalysis, risks
         );
         
+        // Jika sedang mengedit, set waktu update
         if (isEditing) {
             recommendation.setUpdated(LocalDateTime.now());
         }

@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import com.vunguard.Main;
 import com.vunguard.models.User;
+import com.vunguard.services.AuthService;
 
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -55,37 +56,14 @@ public class LoginController {
         String username = usernameField.getText().trim();
         String password = passwordField.getText();
 
-        System.out.println("Sign In Attempt:");
-        System.out.println("Username: " + username);
-
-        // Validate input
         if (username.isEmpty() || password.isEmpty()) {
             showAlert("Please enter both username and password!", AlertType.WARNING);
             return;
         }
 
-        // Get registered users
-        List<User> registeredUsers = RegistrationController.getRegisteredUsers();
-        
-        // Check if any user matches the credentials
-        // Note: In a real application, passwords should be hashed and compared securely
-        boolean loginSuccessful = false;
-        for (User user : registeredUsers) {
-            if (user.getUsername().equals(username)) {
-                // For demo purposes, we'll accept any password for registered users
-                // In a real app, you'd validate the actual password
-                loginSuccessful = true;
-                break;
-            }
-        }
-        
-        // Also check for admin account
-        if (username.equals("admin") && password.equals("password")) {
-            loginSuccessful = true;
-        }
-
-        if (loginSuccessful) {
-            System.out.println("Login successful");
+        // Gunakan AuthService untuk otentikasi
+        if (AuthService.authenticate(username, password)) {
+            System.out.println("Login successful for user: " + username);
             try {
                 Main.loadDashboardScene();
             } catch (IOException e) {
@@ -93,15 +71,12 @@ public class LoginController {
                 showAlert("Error loading dashboard. Please try again.", AlertType.ERROR);
             }
         } else {
-            System.out.println("Login failed");
-            showAlert(
-                "Login failed!\n\n" +
-                "Invalid username or password. Please check your credentials and try again.\n" +
-                "If you don't have an account, please register first.",
-                AlertType.ERROR
-            );
+            System.out.println("Login failed for user: " + username);
+            showAlert("Login failed!\n\nInvalid username or password. Please check your credentials and try again.", AlertType.ERROR);
         }
-    }@FXML
+    }
+    
+    @FXML
     private void handleForgotPasswordAction(ActionEvent event) {
         System.out.println("Forgot Password link clicked");
         showForgotPasswordDialog();

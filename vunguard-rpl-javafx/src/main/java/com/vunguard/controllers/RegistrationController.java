@@ -1,4 +1,5 @@
 package com.vunguard.controllers;
+import com.vunguard.util.DatabaseManager;
 
 import java.io.IOException;
 import com.vunguard.Main;
@@ -15,6 +16,12 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+
+import java.sql.Connection;
+import org.mindrot.jbcrypt.BCrypt;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class RegistrationController {
     
@@ -111,9 +118,9 @@ public class RegistrationController {
 
     @FXML
     private void handleRegisterAction(ActionEvent event) {
-        String fullName = fullNameField.getText();
-        String email = emailField.getText();
-        String username = usernameField.getText();
+        String fullName = fullNameField.getText().trim();
+        String email = emailField.getText().trim().toLowerCase();
+        String username = usernameField.getText().trim();
         String password = passwordField.getText();
         String confirmPassword = confirmPasswordField.getText();
 
@@ -126,38 +133,53 @@ public class RegistrationController {
             showAlert("Passwords do not match!", AlertType.ERROR);
             return;
         }
-
-        // Check if username already exists
-        if (isUsernameExists(username)) {
-            showAlert("Username already exists! Please choose a different username.", AlertType.ERROR);
-            return;
-        }
-
-        // Check if email already exists
-        if (isEmailExists(email)) {
-            showAlert("Email already registered! Please use a different email.", AlertType.ERROR);
-            return;
-        }
-
-        // Save the user data with selected role
-        User newUser = new User(username, fullName, email, selectedRole, LocalDate.now());
-        registeredUsers.add(newUser);
         
-        System.out.println("User registered: " + newUser.getUsername() + " as " + selectedRole);
-        System.out.println("Total registered users: " + registeredUsers.size());
+        try (Connection conn = DatabaseManager.getConnection()) {
+            if (checkIfUserExists(conn, "username", username)) {
+                showAlert("Username already exists!", AlertType.ERROR);
+                return;
+            }
+            if (checkIfUserExists(conn, "email", email)) {
+                showAlert("Email already registered!", AlertType.ERROR);
+                return;
+            }
 
-        showAlert("Registration successful for " + username + " as " + selectedRole + "!\nYou can now login with your credentials.", AlertType.INFORMATION);
-        
-        // Clear form fields
-        clearFields();
-        
-        // Navigate back to login
-        try {
-            Main.loadLoginScene();
+            String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
+            String sql = "INSERT INTO users (username, password, email, full_name, role) VALUES (?, ?, ?, ?, ?)";
+            
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, username);
+                pstmt.setString(2, hashedPassword);
+                pstmt.setString(3, email);
+                pstmt.setString(4, fullName);
+                pstmt.setString(5, selectedRole.toLowerCase());
+                
+                int affectedRows = pstmt.executeUpdate();
+
+                if (affectedRows > 0) {
+                    showAlert("Registration successful for " + username + "! You can now login.", AlertType.INFORMATION);
+                    Main.loadLoginScene();
+                } else {
+                    showAlert("Registration failed. Please try again.", AlertType.ERROR);
+                }
+            }
+        } catch (SQLException e) {
+            showAlert("Database error during registration.", AlertType.ERROR);
+            e.printStackTrace();
         } catch (IOException e) {
             System.err.println("Error loading Login scene: " + e.getMessage());
         }
     }
+
+    private boolean checkIfUserExists(Connection conn, String field, String value) throws SQLException {
+        String sql = "SELECT 1 FROM users WHERE " + field + " = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, value);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }   
 
     private boolean isUsernameExists(String username) {
         return registeredUsers.stream()
