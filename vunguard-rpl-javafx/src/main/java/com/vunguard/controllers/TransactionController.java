@@ -1,6 +1,8 @@
 package com.vunguard.controllers;
 
 import com.vunguard.models.Transaction;
+import com.vunguard.services.TransactionService;
+import com.vunguard.services.AuthenticationService;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -22,6 +24,7 @@ import java.util.Locale;
 import java.util.Optional;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 public class TransactionController {
@@ -81,12 +84,13 @@ public class TransactionController {
     @FXML
     private SidebarController sidebarViewController;
 
-    // Sample data for demonstration
+    // Data for display
     private ObservableList<Transaction> transactionList = FXCollections.observableArrayList();
     private ObservableList<Transaction> filteredList = FXCollections.observableArrayList();
     
-    // Current user role simulation (in real app, this would come from auth system)
-    private String currentUserRole = "manager"; // Can be: "investor", "manager", "analyst", "admin"
+    // Services
+    private TransactionService transactionService;
+    private AuthenticationService authService;
 
     // Create Transaction Dialog Fields - These will be injected when dialog is loaded
     @FXML private ComboBox<String> investorComboBox;
@@ -105,6 +109,15 @@ public class TransactionController {
     @FXML
     private void initialize() {
         System.out.println("TransactionController initialized");
+
+        // Initialize services
+        try {
+            transactionService = TransactionService.getInstance();
+            authService = AuthenticationService.getInstance();
+        } catch (Exception e) {
+            System.err.println("Failed to initialize services: " + e.getMessage());
+            e.printStackTrace();
+        }
 
         if (sidebarViewController != null) {
             System.out.println("SidebarView Controller injected into TransactionController");
@@ -134,11 +147,22 @@ public class TransactionController {
             showCreateTransactionDialog();
         });
 
-        // Load sample data
-        loadSampleTransactions();
+        // Only load transactions automatically for regular investors, not for admin/manager/analyst
+        if (authService != null && authService.isLoggedIn()) {
+            String currentUserRole = authService.getCurrentUserRole();
+            boolean isRegularInvestor = "investor".equals(currentUserRole);
+            
+            if (isRegularInvestor) {
+                // Regular investors see their own transactions immediately
+                loadTransactionsFromDatabase();
+                filteredList.addAll(transactionList);
+            } else {
+                // Admin/manager/analyst must select an investor first
+                System.out.println("Admin/manager/analyst must select an investor to view transactions");
+            }
+        }
 
         // Set the data to the table
-        filteredList.addAll(transactionList);
         transactionTable.setItems(filteredList);
     }
 
@@ -303,7 +327,7 @@ public class TransactionController {
 
     private void setupFilters() {
         // Setup filter combo boxes with updated field names
-        typeFilter.getItems().addAll("All Types", "Buy", "Sell", "Deposit", "Withdrawal", "Dividend");
+        typeFilter.getItems().addAll("All Types", "BUY", "SELL", "DEPOSIT", "WITHDRAWAL");
         typeFilter.setValue("All Types");
 
         portfolioFilter.getItems().addAll("All Portfolios", "Conservative Portfolio", "Growth Portfolio", "Income Portfolio");
@@ -321,9 +345,10 @@ public class TransactionController {
     private void applyFilters() {
         filteredList.clear();
         
-        String typeFilterValue = typeFilter.getValue();
-        String portfolioFilterValue = portfolioFilter.getValue();
-        String statusFilterValue = statusFilter.getValue();
+        // Safe null checking for filter values
+        String typeFilterValue = (typeFilter != null && typeFilter.getValue() != null) ? typeFilter.getValue() : "All Types";
+        String portfolioFilterValue = (portfolioFilter != null && portfolioFilter.getValue() != null) ? portfolioFilter.getValue() : "All Portfolios";
+        String statusFilterValue = (statusFilter != null && statusFilter.getValue() != null) ? statusFilter.getValue() : "All Statuses";
 
         for (Transaction transaction : transactionList) {
             boolean typeMatch = typeFilterValue.equals("All Types") || transaction.getType().equals(typeFilterValue);
@@ -463,8 +488,8 @@ public class TransactionController {
         
         // Setup Type ComboBox
         typeComboBox.getItems().clear();
-        typeComboBox.getItems().addAll("Buy", "Sell");
-        typeComboBox.setValue("Buy");
+        typeComboBox.getItems().addAll("BUY", "SELL");
+        typeComboBox.setValue("BUY");
 
         // Setup cascading dropdowns
         setupCascadingDropdowns();
@@ -563,18 +588,48 @@ public class TransactionController {
     @FXML
     private void handleCreateAction(ActionEvent event) {
         if (validateCreateTransactionInput()) {
-            Transaction transaction = createTransactionFromInput();
-            if (transaction != null) {
-                transactionList.add(transaction);
-                applyFilters(); // Reapply filters to ensure new transaction shows if it meets criteria
-                showSuccessAlert("Transaction '" + transaction.getId() + "' created successfully!");
+            // Create transaction using TransactionService
+            try {
+                String selectedInvestor = investorComboBox.getValue();
+                String type = typeComboBox.getValue();
+                String portfolio = portfolioComboBox.getValue();
+                String product = productComboBox.getValue();
+                int quantity = Integer.parseInt(quantityField.getText());
+                double price = Double.parseDouble(priceField.getText());
+                String notes = notesField.getText().trim();
                 
-                // Log the creation
-                System.out.println("Transaction created: " + transaction.getId());
-                System.out.println("Type: " + transaction.getType() + ", Amount: $" + String.format("%.2f", transaction.getAmount()));
+                String description = type + " " + quantity + " shares of " + product + " at $" + price;
+                if (!notes.isEmpty()) {
+                    description += " - " + notes;
+                }
                 
-                // Close the dialog
-                closeCreateTransactionDialog();
+                // Extract email from investor selection (e.g., "John Doe (johndoe@email.com)" -> "johndoe@email.com")
+                String investorEmail = selectedInvestor.substring(selectedInvestor.indexOf('(') + 1, selectedInvestor.indexOf(')'));
+                
+                boolean success = transactionService.createTransactionForUser(investorEmail, type, portfolio, product, quantity, price, description);
+                
+                if (success) {
+                    showSuccessAlert("Transaction created successfully!");
+                    
+                    // Reload transactions from database
+                    loadTransactionsFromDatabase();
+                    
+                    // Refresh the filtered list
+                    filteredList.clear();
+                    filteredList.addAll(transactionList);
+                    
+                    // Log the creation
+                    System.out.println("Transaction created: " + description);
+                    
+                    // Close the dialog
+                    closeCreateTransactionDialog();
+                } else {
+                    showAlert("Failed to create transaction. Please try again.", Alert.AlertType.ERROR);
+                }
+                
+            } catch (Exception e) {
+                System.err.println("Error creating transaction: " + e.getMessage());
+                showAlert("Error creating transaction: " + e.getMessage(), Alert.AlertType.ERROR);
             }
         }
     }
@@ -744,16 +799,23 @@ public class TransactionController {
     }
     
     private void setupRoleBasedUI() {
-        // Show investor selection section only for managers, analysts, and admins
-        boolean canViewOtherInvestors = currentUserRole.equals("manager") || 
-                                       currentUserRole.equals("analyst") || 
-                                       currentUserRole.equals("admin");
+        // Check if user is logged in and get their role
+        boolean canViewOtherInvestors = false;
         
+        if (authService != null && authService.isLoggedIn()) {
+            String currentUserRole = authService.getCurrentUserRole();
+            canViewOtherInvestors = "manager".equals(currentUserRole) || 
+                                   "analyst".equals(currentUserRole) || 
+                                   "admin".equals(currentUserRole);
+            System.out.println("Current user role: " + currentUserRole);
+        }
+        
+        // Show investor selection section only for managers, analysts, and admins
         investorSelectionSection.setVisible(canViewOtherInvestors);
         investorSelectionSection.setManaged(canViewOtherInvestors);
         
         if (!canViewOtherInvestors) {
-            System.out.println("Current user role (" + currentUserRole + ") can only view their own transactions");
+            System.out.println("Current user can only view their own transactions");
         }
     }
     
@@ -768,45 +830,76 @@ public class TransactionController {
                 "Charlie Wilson (charliewilson@email.com)"
             );
             
-            // Set default selection
-            investorSelectionComboBox.setValue("John Doe (johndoe@email.com)");
+            // Set prompt text instead of default selection
+            investorSelectionComboBox.setPromptText("Select an investor to view their transactions");
             
             // Add listener for selection changes
             investorSelectionComboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
                 if (newVal != null) {
                     System.out.println("Selected investor: " + newVal);
-                    // In real implementation, this would load transactions for selected investor
                     loadTransactionsForInvestor(newVal);
+                } else {
+                    // If selection is cleared, show empty table
+                    transactionList.clear();
+                    filteredList.clear();
+                    System.out.println("No investor selected, showing empty table");
                 }
             });
         }
     }
     
     private void loadTransactionsForInvestor(String investor) {
+        if (transactionService == null) {
+            System.err.println("TransactionService not initialized, cannot load transactions for investor");
+            return;
+        }
+        
         // Clear current transactions
         transactionList.clear();
         filteredList.clear();
         
-        // Load sample data based on selected investor
-        if (investor.contains("John Doe")) {
-            loadSampleTransactions();
-        } else if (investor.contains("Jane Smith")) {
-            transactionList.addAll(
-                new Transaction("TRX004", "Sell", "Jane's Growth Portfolio", "Tech Growth Fund", 100, 10.00, "May 12, 2025"),
-                new Transaction("TRX005", "Buy", "Jane's Income Portfolio", "Global Bond Fund", 50, 20.00, "May 10, 2025")
-            );
-        } else {
-            // Load default empty or other investor data
-            transactionList.addAll(
-                new Transaction("TRX006", "Buy", "Sample Portfolio", "Sample Fund", 10, 100.00, "May 8, 2025")
-            );
+        try {
+            // Extract username from display string (e.g., "John Doe (johndoe@email.com)" -> "johndoe@email.com")
+            String email = investor.substring(investor.indexOf('(') + 1, investor.indexOf(')'));
+            
+            // Get transactions for this investor from database
+            List<Transaction> transactions = transactionService.getTransactionsForUser(email);
+            transactionList.addAll(transactions);
+            
+            // Update table
+            filteredList.addAll(transactionList);
+            System.out.println("Loaded " + transactionList.size() + " transactions for " + investor);
+            
+        } catch (Exception e) {
+            System.err.println("Failed to load transactions for investor " + investor + ": " + e.getMessage());
+            e.printStackTrace();
+            
+            // Fallback to showing empty table
+            System.out.println("Loaded 0 transactions for " + investor + " (error occurred)");
         }
-        
-        // Update table
-        filteredList.addAll(transactionList);
-        System.out.println("Loaded " + transactionList.size() + " transactions for " + investor);
     }
     
+    private void loadTransactionsFromDatabase() {
+        if (transactionService == null) {
+            System.err.println("TransactionService not initialized, using empty data");
+            return;
+        }
+        
+        try {
+            List<Transaction> transactions = transactionService.getUserTransactions();
+            transactionList.clear();
+            transactionList.addAll(transactions);
+            System.out.println("Loaded " + transactions.size() + " transactions from database");
+        } catch (Exception e) {
+            System.err.println("Failed to load transactions from database: " + e.getMessage());
+            e.printStackTrace();
+            
+            // Show error to user
+            showAlert("Failed to load transactions from database. Please check your connection.", 
+                     Alert.AlertType.ERROR);
+        }
+    }
+
     private void loadSampleTransactions() {
         transactionList.clear();
         

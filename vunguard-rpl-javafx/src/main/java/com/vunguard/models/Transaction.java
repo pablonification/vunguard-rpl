@@ -16,6 +16,12 @@ public class Transaction {
     private LocalDateTime date;
     private String status;
 
+    // Default constructor
+    public Transaction() {
+        this.date = LocalDateTime.now();
+        this.status = "PENDING";
+    }
+
     // Constructor for web UI format (Portfolio, Product, Type, Quantity, Price, Total, Date)
     public Transaction(String id, String type, String portfolio, String product, int quantity, double price, String dateFormatted) {
         this.id = id;
